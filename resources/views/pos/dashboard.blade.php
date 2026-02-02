@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <title>Sumber Bangunan POS</title>
+    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
+    @vite(['resources/css/app.scss', 'resources/js/app.js'])
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+        /* --- 1. WARNA BRANDING KHUSUS (SESUAI LOGO) --- */
+        :root {
+            --brand-red: #9A1B1F;
+            /* Merah Marun diambil dari logo */
+            --brand-gold: #FFD700;
+            /* Emas diambil dari ornamen */
+        }
+
+        /* Override warna navbar */
+        .bg-brand {
+            background-color: var(--brand-red) !important;
+            /* Tambahkan garis emas di bawah agar mewah */
+            border-bottom: 4px solid var(--brand-gold);
+        }
+
+        /* Styling Kartu Produk */
+        .product-card:hover {
+            border-color: var(--brand-red);
+            cursor: pointer;
+            transform: scale(1.02);
+            transition: 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .scroll-area {
+            height: 75vh;
+            overflow-y: auto;
+        }
+
+        #digital-clock {
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            /* Bayangan teks agar jelas */
+        }
+
+        /* Agar logo pas di navbar */
+        .navbar-logo {
+            height: 45px;
+            /* Sesuaikan tinggi logo */
+            width: auto;
+            margin-right: 10px;
+            filter: drop-shadow(0px 0px 1px rgba(255, 255, 255, 0.5));
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-brand shadow-sm sticky-top mb-3">
+        <div class="container-fluid px-4">
+
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+                <img src="{{ asset('logo.png') }}" alt="Logo" class="navbar-logo">
+
+                <div class="d-flex flex-column" style="line-height: 1.2;">
+                    <span class="fs-5 text-uppercase" style="letter-spacing: 1px;">SUMBER BANGUNAN</span>
+                    <small style="font-size: 0.75rem; color: var(--brand-gold);">Material & Konstruksi</small>
+                </div>
+            </a>
+
+            <div class="d-flex align-items-center justify-content-center flex-grow-1">
+                <div class="text-white text-center d-none d-md-block">
+                    <div id="digital-clock" class="fw-bold fs-4">00:00:00</div>
+                    <small id="date-text" class="text-white-50" style="font-size: 0.8rem;">...</small>
+                </div>
+            </div>
+
+            <div class="d-flex text-white align-items-center">
+                <div class="text-end me-3 d-none d-md-block">
+                    <span class="d-block fw-bold">{{ Auth::user()->name }}</span>
+                    <small class="badge bg-warning text-dark">{{ ucfirst(Auth::user()->role) }}</small>
+                </div>
+                <a href="/logout" class="btn btn-sm btn-outline-light fw-bold">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        <div class="row">
+
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white py-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" id="search" class="form-control border-start-0"
+                                placeholder="Cari nama barang atau kode..." onkeyup="filterProduk()">
+                        </div>
+                    </div>
+                    <div class="card-body bg-light scroll-area">
+                        <div class="row g-3" id="product-list">
+                            @foreach ($products as $p)
+                                <div class="col-md-4 product-item" data-name="{{ strtolower($p->nama) }}"
+                                    data-kode="{{ strtolower($p->kode) }}">
+                                    <div class="card product-card h-100 text-center p-2"
+                                        onclick="addToCart({{ $p->id }}, '{{ $p->nama }}', {{ $p->harga }})">
+                                        <div class="card-body">
+                                            <h6 class="fw-bold text-dark mb-1">{{ $p->nama }}</h6>
+                                            <small class="text-muted d-block mb-2">{{ $p->kode }}</small>
+                                            <span class="badge bg-success fs-6">Rp
+                                                {{ number_format($p->harga, 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-cart-fill me-2"></i> Keranjang Belanja</span>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="resetCart()">Reset</button>
+                    </div>
+
+                    <div class="card-body p-0 scroll-area bg-white position-relative">
+                        <table class="table table-striped mb-0 table-hover">
+                            <thead class="table-light sticky-top" style="top: 0; z-index: 10;">
+                                <tr>
+                                    <th class="ps-3">Barang</th>
+                                    <th width="15%" class="text-center">Qty</th>
+                                    <th class="text-end pe-3">Total</th>
+                                    <th width="5%"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cart-items">
+                            </tbody>
+                        </table>
+
+                        <div id="empty-cart" class="text-center py-5 text-muted">
+                            <i class="bi bi-basket display-1 text-light"></i>
+                            <p class="mt-2">Belum ada barang dipilih.</p>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-white p-3 border-top shadow-lg" style="z-index: 20;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Subtotal</span>
+                            <span class="fw-bold" id="label-subtotal">Rp 0</span>
+                        </div>
+
+                        <div class="input-group input-group-sm mb-3">
+                            <span class="input-group-text bg-light">Diskon (Rp)</span>
+                            <input type="number" id="input-diskon" class="form-control text-end fw-bold text-danger"
+                                value="0">
+                        </div>
+
+                        <div id="box-admin" class="alert alert-warning p-2 d-none mb-3 border-warning">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-lock-fill me-2"></i>
+                                <small class="fw-bold">Butuh Approval Admin:</small>
+                            </div>
+                            <input type="password" id="admin-pass" class="form-control form-control-sm"
+                                placeholder="Password Admin...">
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-3 p-2 bg-primary bg-opacity-10 rounded">
+                            <span class="h4 fw-bold text-primary mb-0 align-self-center">TOTAL</span>
+                            <span class="h3 fw-bold text-primary mb-0" id="label-total">Rp 0</span>
+                        </div>
+
+                        <button onclick="prosesBayar()"
+                            class="btn btn-primary w-100 py-3 fw-bold text-uppercase shadow">
+                            <i class="bi bi-cash-coin me-2"></i> Proses Pembayaran
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- BAGIAN 1: JAM DIGITAL ---
+        function updateClock() {
+            const now = new Date();
+
+            // Format Jam (HH:MM:SS)
+            const timeString = now.toLocaleTimeString('id-ID', {
+                hour12: false
+            });
+            document.getElementById('digital-clock').innerText = timeString;
+
+            // Format Tanggal (Senin, 1 Jan 2026)
+            const dateOptions = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            const dateString = now.toLocaleDateString('id-ID', dateOptions);
+            document.getElementById('date-text').innerText = dateString;
+        }
+
+        // Jalankan jam setiap 1 detik
+        setInterval(updateClock, 1000);
+        updateClock(); // Jalankan langsung saat load agar tidak menunggu 1 detik
+
+
+        // --- BAGIAN 2: SISTEM KASIR ---
+        let cart = [];
+        let subtotal = 0;
+        const role = "{{ Auth::user()->role }}";
+
+        // Tambah Barang
+        function addToCart(id, name, price) {
+            let existingItem = cart.find(item => item.id === id);
+            if (existingItem) {
+                existingItem.qty++;
+            } else {
+                cart.push({
+                    id: id,
+                    name: name,
+                    price: price,
+                    qty: 1
+                });
+            }
+            renderCart();
+        }
+
+        // Render Tampilan Keranjang
+        function renderCart() {
+            let tbody = document.getElementById('cart-items');
+            tbody.innerHTML = '';
+            subtotal = 0;
+
+            if (cart.length === 0) {
+                document.getElementById('empty-cart').classList.remove('d-none');
+            } else {
+                document.getElementById('empty-cart').classList.add('d-none');
+            }
+
+            cart.forEach((item, index) => {
+                let totalItem = item.price * item.qty;
+                subtotal += totalItem;
+
+                let row = `
+                    <tr>
+                        <td class="align-middle ps-3">
+                            <div class="fw-bold text-dark">${item.name}</div>
+                            <small class="text-muted">@ Rp ${item.price.toLocaleString('id-ID')}</small>
+                        </td>
+                        <td class="align-middle">
+                            <input type="number" class="form-control form-control-sm text-center fw-bold" 
+                                   value="${item.qty}" onchange="updateQty(${index}, this.value)" min="1">
+                        </td>
+                        <td class="text-end align-middle pe-3 fw-bold">Rp ${totalItem.toLocaleString('id-ID')}</td>
+                        <td class="align-middle text-end">
+                            <button class="btn btn-sm text-danger" onclick="hapusItem(${index})">
+                                <i class="bi bi-x-circle-fill fs-5"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+            hitungTotal();
+        }
+
+        // Hitung Total
+        function hitungTotal() {
+            let diskon = parseInt(document.getElementById('input-diskon').value) || 0;
+            let grandTotal = subtotal - diskon;
+
+            document.getElementById('label-subtotal').innerText = 'Rp ' + subtotal.toLocaleString('id-ID');
+            document.getElementById('label-total').innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
+
+            let boxAdmin = document.getElementById('box-admin');
+            if (role === 'kasir' && diskon > 10000) {
+                boxAdmin.classList.remove('d-none');
+            } else {
+                boxAdmin.classList.add('d-none');
+            }
+        }
+
+        function updateQty(index, qty) {
+            if (qty < 1) qty = 1;
+            cart[index].qty = parseInt(qty);
+            renderCart();
+        }
+
+        function hapusItem(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function resetCart() {
+            cart = [];
+            document.getElementById('input-diskon').value = 0;
+            renderCart();
+        }
+
+        // Filter Pencarian Barang
+        function filterProduk() {
+            let keyword = document.getElementById('search').value.toLowerCase();
+            let items = document.querySelectorAll('.product-item');
+
+            items.forEach(item => {
+                let name = item.getAttribute('data-name');
+                let kode = item.getAttribute('data-kode');
+
+                if (name.includes(keyword) || kode.includes(keyword)) {
+                    item.classList.remove('d-none');
+                } else {
+                    item.classList.add('d-none');
+                }
+            });
+        }
+
+        document.getElementById('input-diskon').addEventListener('input', function() {
+            hitungTotal();
+        });
+
+        // Proses Bayar
+        function prosesBayar() {
+            if (cart.length === 0) {
+                alert("Keranjang masih kosong!");
+                return;
+            }
+
+            let btn = document.querySelector('button[onclick="prosesBayar()"]');
+            let originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Memproses...';
+            btn.disabled = true;
+
+            let diskon = document.getElementById('input-diskon').value;
+            let adminPass = document.getElementById('admin-pass').value;
+
+            fetch('/transaksi/bayar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        cart: cart,
+                        diskon: diskon,
+                        admin_password: adminPass
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Mainkan suara sukses (opsional)
+                        alert("✅ Transaksi Berhasil!\nKembalian: " + data.msg);
+                        window.location.reload();
+                    } else {
+                        alert("❌ Gagal: " + data.msg);
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Terjadi kesalahan sistem.");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        }
+    </script>
+</body>
+
+</html>
