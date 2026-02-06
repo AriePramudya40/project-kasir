@@ -9,81 +9,125 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-    // --- HALAMAN VIEW ---
+    // --- VIEW ---
     public function showLogin() { return view('auth.login'); }
     public function showRegister() { return view('auth.register'); }
 
-    // --- PROSES REGISTER ---
-    // --- PROSES REGISTER (UPDATED) ---
+    // --- REGISTER MANUAL ---
     public function processRegister(Request $request) {
-        // 1. Validasi Input (Wajib isi role)
         $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:users',
+            'username' => 'required|alpha_dash|min:3',
             'password' => 'required|min:6',
-            'role' => 'required|in:admin,kasir' // Hanya boleh pilih admin atau kasir
+            'role' => 'required|in:kasir'
         ]);
 
-        // 2. Simpan ke Database
+        $dummyEmail = $request->username . '@kasir.lokal';
+
+        if (User::where('email', $dummyEmail)->exists()) {
+            return back()->withErrors(['username' => 'Username sudah terpakai.']);
+        }
+
         User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'email' => $dummyEmail,
             'password' => Hash::make($request->password),
-            'role' => $request->role // <-- Ambil langsung dari pilihan user
+            'role' => 'kasir'
         ]);
 
         return redirect('/login')->with('success', 'Registrasi Berhasil! Silakan Login.');
     }
 
-    // --- PROSES LOGIN MANUAL ---
+    // --- LOGIN MANUAL (TANPA OTP) ---
     public function processLogin(Request $request) {
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            return redirect('/dashboard');
+        $input = $request->login_id;
+        $password = $request->password;
+        
+        // Deteksi Email vs Username
+        if (filter_var($input, FILTER_VALIDATE_EMAIL)) {
+            $credentials = ['email' => $input, 'password' => $password];
+        } else {
+            $credentials = ['email' => $input . '@kasir.lokal', 'password' => $password];
         }
-        return back()->with('error', 'Email atau Password salah!');
+
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            // Redirect ke Dashboard dengan Pesan Selamat Datang
+            return redirect('/dashboard')->with('login_success', "Selamat Datang, {$user->name}!");
+        }
+        
+        return back()->with('error', 'Username/Email atau Password salah!');
     }
 
-    // --- PROSES LOGIN GOOGLE ---
-    public function googleRedirect() {
+    // --- GOOGLE REDIRECT ---
+    public function googleRedirect(Request $request) {
+        if ($request->has('role')) {
+            session(['register_role' => $request->role]);
+        }
         return Socialite::driver('google')->redirect();
     }
 
+    // --- GOOGLE CALLBACK (LANGSUNG LOGIN) ---
     public function googleCallback() {
         try {
             $googleUser = Socialite::driver('google')->user();
-            
-            // 1. Cari apakah email ini sudah ada di database?
             $user = User::where('email', $googleUser->getEmail())->first();
 
+            // 1. USER LAMA (LOGIN)
             if ($user) {
-                // A. JIKA SUDAH ADA (Login)
-                // Update Google ID-nya biar sinkron, lalu login
-                $user->update(['google_id' => $googleUser->getId()]);
+                if ($user->role === 'admin' && !$user->password) {
+                     Auth::login($user); return redirect('/auth/set-password');
+                }
+                // Cek apakah Admin punya password (Login manual wajib)
+                if ($user->role !== 'kasir' && $user->password) {
+                    return redirect('/login')->with('error', 'Admin harap login manual.');
+                }
+                
+                if (!$user->google_id) { $user->update(['google_id' => $googleUser->getId()]); }
+
+                // LOGIN LANGSUNG
                 Auth::login($user);
-                return redirect('/dashboard');
-            } else {
-                // B. JIKA BELUM ADA (Register Otomatis)
-                // Kita buatkan akun baru
-                $newUser = User::create([
-                    'name' => $googleUser->getName(),
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'role' => 'kasir',     // Default jadi Kasir
-                    'password' => null,    // Tidak punya password (login harus pakai Google terus)
-                ]);
+                return redirect('/dashboard')->with('login_success', "Selamat Datang kembali, {$user->name}!");
+            } 
+            
+            // 2. USER BARU (REGISTER)
+            else {
+                $targetRole = session('register_role');
+                if ($targetRole && in_array($targetRole, ['admin', 'kasir'])) {
+                    $newUser = User::create([
+                        'name' => $googleUser->getName(),
+                        'email' => $googleUser->getEmail(),
+                        'google_id' => $googleUser->getId(),
+                        'role' => $targetRole,
+                        'password' => null
+                    ]);
+                    session()->forget('register_role');
+                    Auth::login($newUser);
 
-                // Langsung login
-                Auth::login($newUser);
-                return redirect('/dashboard')->with('success', 'Akun berhasil dibuat otomatis!');
+                    if ($targetRole === 'admin') {
+                        return redirect('/auth/set-password');
+                    }
+
+                    // LOGIN LANGSUNG
+                    return redirect('/dashboard')->with('login_success', "Selamat Datang, {$newUser->name}!");
+                } else {
+                    return redirect('/login')->with('error', 'Akun belum terdaftar.');
+                }
             }
-
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Gagal Login Google. Error: ' . $e->getMessage());
+            return redirect('/login')->with('error', 'Gagal Login Google.');
         }
     }
 
-    public function logout() {
-        Auth::logout();
-        return redirect('/login');
+    public function logout() { Auth::logout(); return redirect('/login'); }
+    
+    // (Fungsi Set Password Admin biarkan tetap ada)
+    public function showSetPassword() { return view('auth.set-password'); }
+    public function processSetPassword(Request $request) {
+        $request->validate(['password' => 'required|min:6|confirmed']);
+        $user = User::find(Auth::id());
+        $user->password = Hash::make($request->password);
+        $user->save();
+        return redirect('/dashboard')->with('login_success', 'Password dibuat. Selamat Datang!');
     }
 }

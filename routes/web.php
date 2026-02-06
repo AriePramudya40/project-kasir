@@ -20,6 +20,10 @@ Route::middleware('guest')->group(function() {
 Route::middleware('auth')->group(function() {
     Route::get('/logout', [AuthController::class, 'logout']);
     
+    // --- TAMBAHAN: KHUSUS ADMIN SET PASSWORD ---
+    Route::get('/auth/set-password', [AuthController::class, 'showSetPassword'])->name('auth.set-password');
+    Route::post('/auth/set-password', [AuthController::class, 'processSetPassword']);
+    
     // POS
     Route::get('/dashboard', [PosController::class, 'index']);
     Route::post('/transaksi/bayar', [PosController::class, 'bayar']);

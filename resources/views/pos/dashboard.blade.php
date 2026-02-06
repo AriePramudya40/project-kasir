@@ -1,12 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'POS - Sumber Bangunan')
-@section('body-class', 'bg-light')
-
-@push('styles')
+@section('content')
     <style>
-        /* Navbar Custom Override */
-        .bg-brand-nav {
+        :root {
+            --brand-red: #9A1B1F;
+            --brand-gold: #FFD700;
+        }
+
+        /* Navbar Khusus POS (Menimpa style layout jika perlu) */
+        .bg-brand {
             background-color: var(--brand-red) !important;
             border-bottom: 4px solid var(--brand-gold);
         }
@@ -38,13 +40,7 @@
         }
     </style>
 
-    {{-- Script Midtrans Wajib Ada --}}
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
-@endpush
-
-@section('content')
-    {{-- Navbar --}}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-brand-nav shadow-sm sticky-top mb-3">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-brand shadow-sm sticky-top mb-3">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
                 <img src="{{ asset('logo.png') }}" alt="Logo" class="navbar-logo">
@@ -54,7 +50,6 @@
                 </div>
             </a>
 
-            {{-- Jam Digital --}}
             <div class="d-flex align-items-center justify-content-center flex-grow-1">
                 <div class="text-white text-center d-none d-md-block">
                     <div id="digital-clock" class="fw-bold fs-4">00:00:00</div>
@@ -62,7 +57,6 @@
                 </div>
             </div>
 
-            {{-- User Info --}}
             <div class="d-flex text-white align-items-center">
                 <div class="text-end me-3 d-none d-md-block">
                     <span class="d-block fw-bold">{{ Auth::user()->name }}</span>
@@ -77,7 +71,7 @@
 
     <div class="container-fluid px-4">
         <div class="row">
-            {{-- Kolom Kiri: Daftar Produk --}}
+
             <div class="col-md-7">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white py-3">
@@ -108,7 +102,6 @@
                 </div>
             </div>
 
-            {{-- Kolom Kanan: Keranjang (Cart) --}}
             <div class="col-md-5">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
@@ -161,67 +154,51 @@
                             <span class="h3 fw-bold text-primary mb-0" id="label-total">Rp 0</span>
                         </div>
 
-                        {{-- Input Uang Diterima --}}
-                        <div class="input-group mb-3">
-                            <span class="input-group-text bg-white">Diterima (Rp)</span>
-                            <input type="number" id="uang-diterima"
-                                class="form-control form-control-lg text-end fw-bold text-primary" placeholder="0">
-                        </div>
-
-                        {{-- Pilihan Metode Pembayaran (BARU) --}}
-                        <div class="mb-3">
-                            <label class="fw-bold small text-muted">Metode Pembayaran</label>
-                            <select id="metode-bayar" class="form-select fw-bold" onchange="cekMetode()">
-                                <option value="tunai">💵 Tunai (Cash)</option>
-                                <option value="online">💳 QRIS / Transfer Bank</option>
-                            </select>
-                        </div>
-
-                        <button onclick="prosesBayar()" class="btn btn-primary w-100 py-3 fw-bold text-uppercase shadow">
+                        <button onclick="prosesBayar()" class="btn btn-primary w-100 py-3 fw-bold text-uppercase shadow"
+                            style="background-color: var(--brand-red); border:none;">
                             <i class="bi bi-cash-coin me-2"></i> Proses Pembayaran
                         </button>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
-@endsection
 
-@push('scripts')
     <script>
-        // --- JAM DIGITAL ---
+        // ... (LOGIKA JAM DIGITAL) ...
         function updateClock() {
             const now = new Date();
-            document.getElementById('digital-clock').innerText = now.toLocaleTimeString('id-ID', {
+            const timeString = now.toLocaleTimeString('id-ID', {
                 hour12: false
             });
-            document.getElementById('date-text').innerText = now.toLocaleDateString('id-ID', {
+            document.getElementById('digital-clock').innerText = timeString;
+            const dateOptions = {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
-            });
+            };
+            const dateString = now.toLocaleDateString('id-ID', dateOptions);
+            document.getElementById('date-text').innerText = dateString;
         }
         setInterval(updateClock, 1000);
         updateClock();
 
-        // --- SISTEM KASIR ---
+        // ... (LOGIKA KERANJANG BELANJA - SAMA SEPERTI SEBELUMNYA) ...
         let cart = [];
         let subtotal = 0;
         const role = "{{ Auth::user()->role }}";
 
         function addToCart(id, name, price) {
             let existingItem = cart.find(item => item.id === id);
-            if (existingItem) {
-                existingItem.qty++;
-            } else {
-                cart.push({
-                    id: id,
-                    name: name,
-                    price: price,
-                    qty: 1
-                });
-            }
+            if (existingItem) existingItem.qty++;
+            else cart.push({
+                id: id,
+                name: name,
+                price: price,
+                qty: 1
+            });
             renderCart();
         }
 
@@ -229,33 +206,18 @@
             let tbody = document.getElementById('cart-items');
             tbody.innerHTML = '';
             subtotal = 0;
-
-            if (cart.length === 0) {
-                document.getElementById('empty-cart').classList.remove('d-none');
-            } else {
-                document.getElementById('empty-cart').classList.add('d-none');
-            }
+            if (cart.length === 0) document.getElementById('empty-cart').classList.remove('d-none');
+            else document.getElementById('empty-cart').classList.add('d-none');
 
             cart.forEach((item, index) => {
                 let totalItem = item.price * item.qty;
                 subtotal += totalItem;
-
-                let row = `
-                <tr>
-                    <td class="align-middle ps-3">
-                        <div class="fw-bold text-dark">${item.name}</div>
-                        <small class="text-muted">@ Rp ${item.price.toLocaleString('id-ID')}</small>
-                    </td>
-                    <td class="align-middle">
-                        <input type="number" class="form-control form-control-sm text-center fw-bold" value="${item.qty}"
-                            onchange="updateQty(${index}, this.value)" min="1">
-                    </td>
-                    <td class="text-end align-middle pe-3 fw-bold">Rp ${totalItem.toLocaleString('id-ID')}</td>
-                    <td class="align-middle text-end">
-                        <button class="btn btn-sm text-danger" onclick="hapusItem(${index})"><i
-                                class="bi bi-x-circle-fill fs-5"></i></button>
-                    </td>
-                </tr>`;
+                let row = `<tr>
+                        <td class="align-middle ps-3"><div class="fw-bold text-dark">${item.name}</div><small class="text-muted">@ Rp ${item.price.toLocaleString('id-ID')}</small></td>
+                        <td class="align-middle"><input type="number" class="form-control form-control-sm text-center fw-bold" value="${item.qty}" onchange="updateQty(${index}, this.value)" min="1"></td>
+                        <td class="text-end align-middle pe-3 fw-bold">Rp ${totalItem.toLocaleString('id-ID')}</td>
+                        <td class="align-middle text-end"><button class="btn btn-sm text-danger" onclick="hapusItem(${index})"><i class="bi bi-x-circle-fill fs-5"></i></button></td>
+                    </tr>`;
                 tbody.innerHTML += row;
             });
             hitungTotal();
@@ -264,16 +226,12 @@
         function hitungTotal() {
             let diskon = parseInt(document.getElementById('input-diskon').value) || 0;
             let grandTotal = subtotal - diskon;
-
             document.getElementById('label-subtotal').innerText = 'Rp ' + subtotal.toLocaleString('id-ID');
             document.getElementById('label-total').innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
 
             let boxAdmin = document.getElementById('box-admin');
-            if (role === 'kasir' && diskon > 10000) {
-                boxAdmin.classList.remove('d-none');
-            } else {
-                boxAdmin.classList.add('d-none');
-            }
+            if (role === 'kasir' && diskon > 10000) boxAdmin.classList.remove('d-none');
+            else boxAdmin.classList.add('d-none');
         }
 
         function updateQty(index, qty) {
@@ -299,36 +257,23 @@
             items.forEach(item => {
                 let name = item.getAttribute('data-name');
                 let kode = item.getAttribute('data-kode');
-                if (name.includes(keyword) || kode.includes(keyword)) {
-                    item.classList.remove('d-none');
-                } else {
-                    item.classList.add('d-none');
-                }
+                if (name.includes(keyword) || kode.includes(keyword)) item.classList.remove('d-none');
+                else item.classList.add('d-none');
             });
         }
 
-        document.getElementById('input-diskon').addEventListener('input', hitungTotal);
+        document.getElementById('input-diskon').addEventListener('input', function() {
+            hitungTotal();
+        });
 
-        // --- FUNGSI BARU: CEK METODE PEMBAYARAN ---
-        function cekMetode() {
-            let metode = document.getElementById('metode-bayar').value;
-            let inputUang = document.getElementById('uang-diterima');
-
-            if (metode === 'online') {
-                inputUang.disabled = true;
-                inputUang.value = 0;
-                inputUang.placeholder = "Otomatis...";
-            } else {
-                inputUang.disabled = false;
-                inputUang.value = '';
-                inputUang.placeholder = "0";
-            }
-        }
-
-        // --- FUNGSI PROSES BAYAR (UPDATE MIDTRANS) ---
         function prosesBayar() {
             if (cart.length === 0) {
-                alert("Keranjang masih kosong!");
+                // Gunakan Swal, jangan alert biasa
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Oops...',
+                    text: 'Keranjang masih kosong!'
+                });
                 return;
             }
 
@@ -337,72 +282,59 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Memproses...';
             btn.disabled = true;
 
-            let metode = document.getElementById('metode-bayar').value;
+            let diskon = document.getElementById('input-diskon').value;
+            let adminPass = document.getElementById('admin-pass').value;
+
+            // Pastikan meta csrf token ada di Layout atau tambahkan di sini jika perlu
+            let token = document.querySelector('meta[name="csrf-token"]') ? document.querySelector(
+                'meta[name="csrf-token"]').content : '{{ csrf_token() }}';
 
             fetch('/transaksi/bayar', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': token
                     },
                     body: JSON.stringify({
                         cart: cart,
-                        diskon: document.getElementById('input-diskon').value,
-                        uang_bayar: document.getElementById('uang-diterima').value,
-                        admin_password: document.getElementById('admin-pass').value,
-                        metode: metode // Kirim metode bayar
+                        diskon: diskon,
+                        admin_password: adminPass
                     })
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
-
-                        if (data.metode === 'online') {
-                            // --- JIKA ONLINE: MUNCUL POPUP MIDTRANS ---
-                            window.snap.pay(data.snap_token, {
-                                onSuccess: function(result) {
-                                    alert("✅ Pembayaran Berhasil!");
-                                    cetakStrukDanReload(data.sale_id);
-                                },
-                                onPending: function(result) {
-                                    alert("⏳ Menunggu Pembayaran...");
-                                    cetakStrukDanReload(data.sale_id);
-                                },
-                                onError: function(result) {
-                                    alert("❌ Pembayaran Gagal!");
-                                    btn.innerHTML = originalText;
-                                    btn.disabled = false;
-                                },
-                                onClose: function() {
-                                    alert('Anda menutup popup tanpa menyelesaikan pembayaran');
-                                    btn.innerHTML = originalText;
-                                    btn.disabled = false;
-                                }
-                            });
-                        } else {
-                            // --- JIKA TUNAI: PROSES SEPERTI BIASA ---
-                            alert("✅ Transaksi Berhasil!\nKembalian: Rp " + data.msg);
-                            cetakStrukDanReload(data.sale_id);
-                        }
-
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Transaksi Berhasil!',
+                            text: 'Kembalian: ' + data.msg,
+                            timer: 3000
+                        }).then(() => {
+                            window.location.reload();
+                        });
                     } else {
-                        alert("❌ Gagal: " + data.msg);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: data.msg
+                        });
                         btn.innerHTML = originalText;
                         btn.disabled = false;
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("Terjadi kesalahan sistem.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan sistem.'
+                    });
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                 });
         }
-
-        function cetakStrukDanReload(id) {
-            let urlStruk = "/transaksi/struk/" + id;
-            window.open(urlStruk, '_blank', 'width=400,height=600');
-            window.location.reload();
-        }
     </script>
-@endpush
+    <div id="flash-data" data-login-success="{{ session('login_success') }}" data-success="{{ session('success') }}"
+        data-error="{{ session('error') }}">
+    </div>
+@endsection

@@ -1,98 +1,84 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar - Sumber Bangunan')
-@section('body-class', 'd-flex align-items-center min-vh-100')
-
-@push('styles')
-    <style>
-        .card-register {
-            border: none;
-            border-top: 5px solid var(--brand-gold);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-
-        .logo-register {
-            width: 100px;
-            height: auto;
-            display: block;
-            margin: 0 auto 10px auto;
-        }
-    </style>
-@endpush
-
 @section('content')
-    <div class="container">
+    <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-md-5">
-                <div class="card card-register p-4">
+                <div class="card card-register p-4"
+                    style="border-top: 5px solid #FFD700; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                     <div class="card-body">
 
                         <div class="text-center mb-4">
-                            <img src="{{ asset('logo.png') }}" alt="Logo" class="logo-register">
-                            <h5 class="fw-bold text-brand">REGISTRASI KARYAWAN</h5>
-                            <p class="text-muted small">Buat akun baru untuk akses sistem POS</p>
+                            <img src="{{ asset('logo.png') }}" alt="Logo"
+                                style="width: 100px; display: block; margin: 0 auto 10px auto;">
+                            <h5 class="fw-bold" style="color: #9A1B1F;">REGISTRASI KASIR</h5>
+                            <p class="text-muted small">Daftar manual khusus staf tanpa Email</p>
                         </div>
-
-                        @if ($errors->any())
-                            <div class="alert alert-danger py-2">
-                                <ul class="mb-0 small ps-3">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
 
                         <form action="/register" method="POST">
                             @csrf
+
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted">Nama Lengkap</label>
                                 <input type="text" name="name" class="form-control" value="{{ old('name') }}"
-                                    required>
+                                    placeholder="Contoh: Budi Santoso" required>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">Email</label>
-                                <input type="email" name="email" class="form-control" value="{{ old('email') }}"
-                                    required>
+                                <label class="form-label small fw-bold text-muted">Buat Username</label>
+                                <input type="text" name="username" class="form-control" value="{{ old('username') }}"
+                                    placeholder="Contoh: budi123" required>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Gunakan huruf & angka
+                                    tanpa spasi untuk login.</small>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted">Jabatan / Role</label>
-                                <select name="role" class="form-select">
-                                    <option value="kasir">Kasir (Staff Toko)</option>
-                                    <option value="admin">Admin (Manager/Pemilik)</option>
-                                </select>
+                                <input type="text" class="form-control bg-light" value="Kasir (Staff Toko)" readonly>
+                                <input type="hidden" name="role" value="kasir">
                             </div>
 
                             <div class="mb-4">
                                 <label class="form-label small fw-bold text-muted">Password</label>
                                 <input type="password" name="password" class="form-control" required>
-                                <small class="text-muted" style="font-size: 0.7rem;">Minimal 6 karakter</small>
                             </div>
 
-                            <button class="btn btn-brand w-100 py-2">DAFTAR SEKARANG</button>
+                            <button class="btn w-100 py-2 text-white fw-bold" style="background-color: #9A1B1F;">DAFTAR
+                                SEKARANG</button>
                         </form>
 
-                        <div class="d-flex align-items-center my-3">
-                            <hr class="flex-grow-1">
-                            <span class="mx-2 text-muted small">atau daftar cepat</span>
-                            <hr class="flex-grow-1">
+                        <div class="text-center mt-4">
+                            <p class="small text-muted mb-2">Punya Email / Admin? Daftar lewat Google:</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="/auth/google?role=kasir" class="btn btn-outline-danger btn-sm w-50">
+                                    <i class="bi bi-google me-1"></i> Sbg Kasir
+                                </a>
+                                <a href="/auth/google?role=admin" class="btn btn-outline-dark btn-sm w-50">
+                                    <i class="bi bi-shield-lock me-1"></i> Sbg Admin
+                                </a>
+                            </div>
                         </div>
 
-                        <a href="/auth/google" class="btn btn-outline-danger w-100 py-2 mb-3">
-                            <i class="bi bi-google me-2"></i> Daftar dengan Google
-                        </a>
-                        <div class="text-center mt-3">
-
-                            <div class="text-center mt-3">
-                                <a href="/login" class="text-decoration-none small text-muted">Sudah punya akun? <span
-                                        class="text-brand fw-bold">Login disini</span></a>
-                            </div>
+                        <div class="text-center mt-4">
+                            <a href="/login" class="text-decoration-none small text-muted">Sudah punya akun? <span
+                                    class="fw-bold" style="color: #9A1B1F;">Login disini</span></a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    @endsection
+    </div>
+
+    <script type="module">
+        import Swal from 'sweetalert2';
+        window.Swal = Swal;
+        @if ($errors->any())
+            Swal.fire({
+                icon: 'warning',
+                title: 'Gagal Daftar',
+                html: `<ul style="text-align: left;">@foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach</ul>`,
+                confirmButtonColor: '#9A1B1F'
+            });
+        @endif
+    </script>
+@endsection

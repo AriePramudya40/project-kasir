@@ -17,6 +17,8 @@
     "dependencies": {
         "@popperjs/core": "^2.11.8",
         "bootstrap": "^5.3.8",
-        "sass": "^1.97.3"
+        "bootstrap-icons": "^1.13.1",
+        "sass": "^1.97.3",
+        "sweetalert2": "^11.26.18"
     }
 }
