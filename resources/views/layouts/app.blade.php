@@ -8,8 +8,8 @@
 
     <title>@yield('title', 'Sumber Bangunan')</title>
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
-
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+
     {{-- CSS & JS Global --}}
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">

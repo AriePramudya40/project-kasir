@@ -10,24 +10,12 @@ class Sale extends Model
     use HasFactory;
 
     protected $fillable = [
-        'no_faktur',
-        'user_id',
-        'subtotal',
-        'diskon',
-        'bayar',        // <--- TAMBAHKAN INI (WAJIB)
-        'approved_by',
-        'grand_total',
+        'no_faktur', 'user_id', 'customer_name', 'payment_method',
+        'subtotal', 'diskon', 'approved_by', 'grand_total', 
+        'bayar',
         'status'
     ];
 
-    public function items()
-    {
-        return $this->hasMany(SaleItem::class);
-    }
-    
-    // Tambahan: Relasi ke User agar nama kasir bisa muncul di struk
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    public function items() { return $this->hasMany(SaleItem::class); }
+    public function user() { return $this->belongsTo(User::class); } // Pastikan relasi ke User (Kasir) ada
 }

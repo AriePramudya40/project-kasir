@@ -58,7 +58,7 @@
     <div class="text-center">
         <img src="{{ asset('logo.png') }}" alt="Logo">
         <div class="fw-bold" style="font-size: 12px;">SUMBER BANGUNAN</div>
-        <div>Jl. Sudirman, Air Molek I, Kec. Pasir Penyu, Kabupaten Indragiri Hulu, Riau 29353</div>
+        <div>Jl. Sudirman, Air Molek I, Kec. Pasir Penyu, Riau</div>
     </div>
 
     <div class="line"></div>
@@ -75,6 +75,16 @@
         <tr>
             <td>Kasir</td>
             <td class="text-right">{{ strtoupper($sale->user->name ?? 'Admin') }}</td>
+        </tr>
+        @if ($sale->customer_name && $sale->customer_name != 'Umum')
+            <tr>
+                <td>Plg</td>
+                <td class="text-right">{{ strtoupper($sale->customer_name) }}</td>
+            </tr>
+        @endif
+        <tr>
+            <td>Metode</td>
+            <td class="text-right fw-bold">{{ strtoupper($sale->payment_method) }}</td>
         </tr>
     </table>
 
@@ -112,14 +122,30 @@
         <tr>
             <td colspan="2" class="line"></td>
         </tr>
-        <tr>
-            <td>Tunai</td>
-            <td class="text-right">{{ number_format($sale->bayar, 0, ',', '.') }}</td>
-        </tr>
-        <tr>
-            <td>Kembali</td>
-            <td class="text-right">{{ number_format($sale->bayar - $sale->grand_total, 0, ',', '.') }}</td>
-        </tr>
+
+        @if ($sale->payment_method == 'cash')
+            <tr>
+                <td>Tunai</td>
+                <td class="text-right">{{ number_format($sale->bayar, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Kembali</td>
+                <td class="text-right">{{ number_format($sale->bayar - $sale->grand_total, 0, ',', '.') }}</td>
+            </tr>
+        @elseif($sale->payment_method == 'utang')
+            <tr>
+                <td>Sisa Utang</td>
+                <td class="text-right">{{ number_format($sale->grand_total, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" class="text-center fw-bold" style="padding-top:5px;">-- BELUM LUNAS --</td>
+            </tr>
+        @elseif($sale->payment_method == 'transfer')
+            <tr>
+                <td>Transfer</td>
+                <td class="text-right">{{ number_format($sale->grand_total, 0, ',', '.') }}</td>
+            </tr>
+        @endif
     </table>
 
     <div class="line" style="margin-top: 10px;"></div>

@@ -9,25 +9,25 @@ return new class extends Migration
     public function up(): void
     {
         // --- TAMBAHAN: TABEL SESSIONS (Yang tadi error) ---
-    Schema::create('sessions', function (Blueprint $table) {
-        $table->string('id')->primary();
-        $table->foreignId('user_id')->nullable()->index();
-        $table->string('ip_address', 45)->nullable();
-        $table->text('user_agent')->nullable();
-        $table->longText('payload');
-        $table->integer('last_activity')->index();
-    });
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
 
-    // 1. TABEL USERS (Karyawan)
-    Schema::create('users', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('email')->unique();
-        $table->string('password')->nullable();
-        $table->string('google_id')->nullable();
-        $table->enum('role', ['admin', 'kasir'])->default('kasir');
-        $table->timestamps();
-    });
+        // 1. TABEL USERS (Karyawan)
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('password')->nullable();
+            $table->string('google_id')->nullable();
+            $table->enum('role', ['admin', 'kasir'])->default('kasir');
+            $table->timestamps();
+        });
 
         // 2. TABEL PRODUK
         Schema::create('products', function (Blueprint $table) {
@@ -43,15 +43,21 @@ return new class extends Migration
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
             $table->string('no_faktur')->unique();
-            $table->foreignId('user_id')->constrained(); // Kasir
+            $table->foreignId('user_id')->constrained();
+            $table->string('customer_name')->nullable();
+            $table->enum('payment_method', ['cash', 'transfer', 'utang', 'qris'])->default('cash');
+
             $table->decimal('subtotal', 15, 2);
-            
-            // Aturan Diskon
             $table->decimal('diskon', 15, 2)->default(0);
-            $table->foreignId('approved_by')->nullable()->constrained('users'); // ID Admin jika diskon > 10rb
-            
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+
             $table->decimal('grand_total', 15, 2);
-$table->enum('status', ['lunas', 'pending', 'batal'])->default('pending');
+
+            // --- TAMBAHAN WAJIB UNTUK STRUK ---
+            $table->decimal('bayar', 15, 2)->default(0); // Uang yang diterima
+            // ----------------------------------
+
+            $table->enum('status', ['lunas', 'belum_lunas', 'batal'])->default('lunas');
             $table->timestamps();
         });
 
@@ -81,11 +87,11 @@ $table->enum('status', ['lunas', 'pending', 'batal'])->default('pending');
 
     public function down(): void
     {
-    Schema::dropIfExists('sessions');
-    Schema::dropIfExists('returns');
-    Schema::dropIfExists('sale_items');
-    Schema::dropIfExists('sales');
-    Schema::dropIfExists('products');
-    Schema::dropIfExists('users');
+        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('returns');
+        Schema::dropIfExists('sale_items');
+        Schema::dropIfExists('sales');
+        Schema::dropIfExists('products');
+        Schema::dropIfExists('users');
     }
 };
