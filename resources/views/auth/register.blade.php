@@ -1,20 +1,10 @@
-<!DOCTYPE html>
-<html lang="id">
+@extends('layouts.app')
 
-<head>
-    <title>Daftar - Sumber Bangunan</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
-    @vite(['resources/css/app.scss', 'resources/js/app.js'])
+@section('title', 'Daftar - Sumber Bangunan')
+@section('body-class', 'd-flex align-items-center min-vh-100')
+
+@push('styles')
     <style>
-        :root {
-            --brand-red: #9A1B1F;
-            --brand-gold: #FFD700;
-        }
-
-        body {
-            background-color: #f8f9fa;
-        }
-
         .card-register {
             border: none;
             border-top: 5px solid var(--brand-gold);
@@ -22,36 +12,16 @@
             border-radius: 10px;
         }
 
-        /* --- PERBAIKAN LOGO REGISTER --- */
         .logo-register {
             width: 100px;
-            /* Diperbesar agar jelas */
             height: auto;
             display: block;
             margin: 0 auto 10px auto;
-            /* Posisi Tengah */
-        }
-
-        .btn-brand {
-            background-color: var(--brand-red);
-            color: white;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        .btn-brand:hover {
-            background-color: #7a1518;
-            color: #fff;
-        }
-
-        .text-brand {
-            color: var(--brand-red);
         }
     </style>
-</head>
+@endpush
 
-<body class="d-flex align-items-center min-vh-100">
-
+@section('content')
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-5">
@@ -60,7 +30,6 @@
 
                         <div class="text-center mb-4">
                             <img src="{{ asset('logo.png') }}" alt="Logo" class="logo-register">
-
                             <h5 class="fw-bold text-brand">REGISTRASI KARYAWAN</h5>
                             <p class="text-muted small">Buat akun baru untuk akses sistem POS</p>
                         </div>
@@ -77,7 +46,6 @@
 
                         <form action="/register" method="POST">
                             @csrf
-
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted">Nama Lengkap</label>
                                 <input type="text" name="name" class="form-control" value="{{ old('name') }}"
@@ -107,15 +75,24 @@
                             <button class="btn btn-brand w-100 py-2">DAFTAR SEKARANG</button>
                         </form>
 
+                        <div class="d-flex align-items-center my-3">
+                            <hr class="flex-grow-1">
+                            <span class="mx-2 text-muted small">atau daftar cepat</span>
+                            <hr class="flex-grow-1">
+                        </div>
+
+                        <a href="/auth/google" class="btn btn-outline-danger w-100 py-2 mb-3">
+                            <i class="bi bi-google me-2"></i> Daftar dengan Google
+                        </a>
                         <div class="text-center mt-3">
-                            <a href="/login" class="text-decoration-none small text-muted">Sudah punya akun? <span
-                                    class="text-brand fw-bold">Login disini</span></a>
+
+                            <div class="text-center mt-3">
+                                <a href="/login" class="text-decoration-none small text-muted">Sudah punya akun? <span
+                                        class="text-brand fw-bold">Login disini</span></a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</body>
-
-</html>
+    @endsection

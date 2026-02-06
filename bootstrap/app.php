@@ -10,9 +10,15 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
+    // --- PERBAIKAN: Cukup satu kali panggil withMiddleware ---
+    ->withMiddleware(function (Middleware $middleware) {
+        
+        // Izinkan rute ini diakses tanpa Token CSRF
+        $middleware->validateCsrfTokens(except: [
+            'midtrans/callback', // <--- WAJIB ADA INI
+        ]);
+
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

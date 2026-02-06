@@ -14,14 +14,20 @@ class Sale extends Model
         'user_id',
         'subtotal',
         'diskon',
+        'bayar',        // <--- TAMBAHKAN INI (WAJIB)
         'approved_by',
         'grand_total',
         'status'
     ];
 
-    // Relasi: Satu Penjualan punya banyak Barang
     public function items()
     {
         return $this->hasMany(SaleItem::class);
+    }
+    
+    // Tambahan: Relasi ke User agar nama kasir bisa muncul di struk
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

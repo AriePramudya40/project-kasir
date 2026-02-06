@@ -23,7 +23,14 @@ Route::middleware('auth')->group(function() {
     // POS
     Route::get('/dashboard', [PosController::class, 'index']);
     Route::post('/transaksi/bayar', [PosController::class, 'bayar']);
+
+    // Pastikan kata keduanya adalah 'cetakStruk', BUKAN 'struk'
+    Route::get('/transaksi/struk/{id}', [PosController::class, 'cetakStruk'])->name('transaksi.struk');
+    
     
     // Redirect home ke dashboard
     Route::get('/', function() { return redirect('/dashboard'); });
 });
+
+// Route Khusus Webhook Midtrans (Jangan dimasukkan ke dalam middleware auth!)
+Route::post('/midtrans/callback', [PosController::class, 'callback']);

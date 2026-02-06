@@ -1,30 +1,16 @@
-<!DOCTYPE html>
-<html lang="id">
+@extends('layouts.app')
 
-<head>
-    <title>Sumber Bangunan POS</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
-    @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+@section('title', 'POS - Sumber Bangunan')
+@section('body-class', 'bg-light')
 
+@push('styles')
     <style>
-        /* --- 1. WARNA BRANDING KHUSUS (SESUAI LOGO) --- */
-        :root {
-            --brand-red: #9A1B1F;
-            /* Merah Marun diambil dari logo */
-            --brand-gold: #FFD700;
-            /* Emas diambil dari ornamen */
-        }
-
-        /* Override warna navbar */
-        .bg-brand {
+        /* Navbar Custom Override */
+        .bg-brand-nav {
             background-color: var(--brand-red) !important;
-            /* Tambahkan garis emas di bawah agar mewah */
             border-bottom: 4px solid var(--brand-gold);
         }
 
-        /* Styling Kartu Produk */
         .product-card:hover {
             border-color: var(--brand-red);
             cursor: pointer;
@@ -42,34 +28,33 @@
             font-family: 'Courier New', Courier, monospace;
             letter-spacing: 2px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-            /* Bayangan teks agar jelas */
         }
 
-        /* Agar logo pas di navbar */
         .navbar-logo {
             height: 45px;
-            /* Sesuaikan tinggi logo */
             width: auto;
             margin-right: 10px;
             filter: drop-shadow(0px 0px 1px rgba(255, 255, 255, 0.5));
         }
     </style>
-</head>
 
-<body class="bg-light">
+    {{-- Script Midtrans Wajib Ada --}}
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+@endpush
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-brand shadow-sm sticky-top mb-3">
+@section('content')
+    {{-- Navbar --}}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-brand-nav shadow-sm sticky-top mb-3">
         <div class="container-fluid px-4">
-
             <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
                 <img src="{{ asset('logo.png') }}" alt="Logo" class="navbar-logo">
-
                 <div class="d-flex flex-column" style="line-height: 1.2;">
                     <span class="fs-5 text-uppercase" style="letter-spacing: 1px;">SUMBER BANGUNAN</span>
                     <small style="font-size: 0.75rem; color: var(--brand-gold);">Material & Konstruksi</small>
                 </div>
             </a>
 
+            {{-- Jam Digital --}}
             <div class="d-flex align-items-center justify-content-center flex-grow-1">
                 <div class="text-white text-center d-none d-md-block">
                     <div id="digital-clock" class="fw-bold fs-4">00:00:00</div>
@@ -77,6 +62,7 @@
                 </div>
             </div>
 
+            {{-- User Info --}}
             <div class="d-flex text-white align-items-center">
                 <div class="text-end me-3 d-none d-md-block">
                     <span class="d-block fw-bold">{{ Auth::user()->name }}</span>
@@ -91,7 +77,7 @@
 
     <div class="container-fluid px-4">
         <div class="row">
-
+            {{-- Kolom Kiri: Daftar Produk --}}
             <div class="col-md-7">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white py-3">
@@ -122,6 +108,7 @@
                 </div>
             </div>
 
+            {{-- Kolom Kanan: Keranjang (Cart) --}}
             <div class="col-md-5">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
@@ -139,8 +126,7 @@
                                     <th width="5%"></th>
                                 </tr>
                             </thead>
-                            <tbody id="cart-items">
-                            </tbody>
+                            <tbody id="cart-items"></tbody>
                         </table>
 
                         <div id="empty-cart" class="text-center py-5 text-muted">
@@ -175,50 +161,55 @@
                             <span class="h3 fw-bold text-primary mb-0" id="label-total">Rp 0</span>
                         </div>
 
-                        <button onclick="prosesBayar()"
-                            class="btn btn-primary w-100 py-3 fw-bold text-uppercase shadow">
+                        {{-- Input Uang Diterima --}}
+                        <div class="input-group mb-3">
+                            <span class="input-group-text bg-white">Diterima (Rp)</span>
+                            <input type="number" id="uang-diterima"
+                                class="form-control form-control-lg text-end fw-bold text-primary" placeholder="0">
+                        </div>
+
+                        {{-- Pilihan Metode Pembayaran (BARU) --}}
+                        <div class="mb-3">
+                            <label class="fw-bold small text-muted">Metode Pembayaran</label>
+                            <select id="metode-bayar" class="form-select fw-bold" onchange="cekMetode()">
+                                <option value="tunai">💵 Tunai (Cash)</option>
+                                <option value="online">💳 QRIS / Transfer Bank</option>
+                            </select>
+                        </div>
+
+                        <button onclick="prosesBayar()" class="btn btn-primary w-100 py-3 fw-bold text-uppercase shadow">
                             <i class="bi bi-cash-coin me-2"></i> Proses Pembayaran
                         </button>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script>
-        // --- BAGIAN 1: JAM DIGITAL ---
+        // --- JAM DIGITAL ---
         function updateClock() {
             const now = new Date();
-
-            // Format Jam (HH:MM:SS)
-            const timeString = now.toLocaleTimeString('id-ID', {
+            document.getElementById('digital-clock').innerText = now.toLocaleTimeString('id-ID', {
                 hour12: false
             });
-            document.getElementById('digital-clock').innerText = timeString;
-
-            // Format Tanggal (Senin, 1 Jan 2026)
-            const dateOptions = {
+            document.getElementById('date-text').innerText = now.toLocaleDateString('id-ID', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
-            };
-            const dateString = now.toLocaleDateString('id-ID', dateOptions);
-            document.getElementById('date-text').innerText = dateString;
+            });
         }
-
-        // Jalankan jam setiap 1 detik
         setInterval(updateClock, 1000);
-        updateClock(); // Jalankan langsung saat load agar tidak menunggu 1 detik
+        updateClock();
 
-
-        // --- BAGIAN 2: SISTEM KASIR ---
+        // --- SISTEM KASIR ---
         let cart = [];
         let subtotal = 0;
         const role = "{{ Auth::user()->role }}";
 
-        // Tambah Barang
         function addToCart(id, name, price) {
             let existingItem = cart.find(item => item.id === id);
             if (existingItem) {
@@ -234,7 +225,6 @@
             renderCart();
         }
 
-        // Render Tampilan Keranjang
         function renderCart() {
             let tbody = document.getElementById('cart-items');
             tbody.innerHTML = '';
@@ -251,29 +241,26 @@
                 subtotal += totalItem;
 
                 let row = `
-                    <tr>
-                        <td class="align-middle ps-3">
-                            <div class="fw-bold text-dark">${item.name}</div>
-                            <small class="text-muted">@ Rp ${item.price.toLocaleString('id-ID')}</small>
-                        </td>
-                        <td class="align-middle">
-                            <input type="number" class="form-control form-control-sm text-center fw-bold" 
-                                   value="${item.qty}" onchange="updateQty(${index}, this.value)" min="1">
-                        </td>
-                        <td class="text-end align-middle pe-3 fw-bold">Rp ${totalItem.toLocaleString('id-ID')}</td>
-                        <td class="align-middle text-end">
-                            <button class="btn btn-sm text-danger" onclick="hapusItem(${index})">
-                                <i class="bi bi-x-circle-fill fs-5"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                <tr>
+                    <td class="align-middle ps-3">
+                        <div class="fw-bold text-dark">${item.name}</div>
+                        <small class="text-muted">@ Rp ${item.price.toLocaleString('id-ID')}</small>
+                    </td>
+                    <td class="align-middle">
+                        <input type="number" class="form-control form-control-sm text-center fw-bold" value="${item.qty}"
+                            onchange="updateQty(${index}, this.value)" min="1">
+                    </td>
+                    <td class="text-end align-middle pe-3 fw-bold">Rp ${totalItem.toLocaleString('id-ID')}</td>
+                    <td class="align-middle text-end">
+                        <button class="btn btn-sm text-danger" onclick="hapusItem(${index})"><i
+                                class="bi bi-x-circle-fill fs-5"></i></button>
+                    </td>
+                </tr>`;
                 tbody.innerHTML += row;
             });
             hitungTotal();
         }
 
-        // Hitung Total
         function hitungTotal() {
             let diskon = parseInt(document.getElementById('input-diskon').value) || 0;
             let grandTotal = subtotal - diskon;
@@ -306,15 +293,12 @@
             renderCart();
         }
 
-        // Filter Pencarian Barang
         function filterProduk() {
             let keyword = document.getElementById('search').value.toLowerCase();
             let items = document.querySelectorAll('.product-item');
-
             items.forEach(item => {
                 let name = item.getAttribute('data-name');
                 let kode = item.getAttribute('data-kode');
-
                 if (name.includes(keyword) || kode.includes(keyword)) {
                     item.classList.remove('d-none');
                 } else {
@@ -323,11 +307,25 @@
             });
         }
 
-        document.getElementById('input-diskon').addEventListener('input', function() {
-            hitungTotal();
-        });
+        document.getElementById('input-diskon').addEventListener('input', hitungTotal);
 
-        // Proses Bayar
+        // --- FUNGSI BARU: CEK METODE PEMBAYARAN ---
+        function cekMetode() {
+            let metode = document.getElementById('metode-bayar').value;
+            let inputUang = document.getElementById('uang-diterima');
+
+            if (metode === 'online') {
+                inputUang.disabled = true;
+                inputUang.value = 0;
+                inputUang.placeholder = "Otomatis...";
+            } else {
+                inputUang.disabled = false;
+                inputUang.value = '';
+                inputUang.placeholder = "0";
+            }
+        }
+
+        // --- FUNGSI PROSES BAYAR (UPDATE MIDTRANS) ---
         function prosesBayar() {
             if (cart.length === 0) {
                 alert("Keranjang masih kosong!");
@@ -339,8 +337,7 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Memproses...';
             btn.disabled = true;
 
-            let diskon = document.getElementById('input-diskon').value;
-            let adminPass = document.getElementById('admin-pass').value;
+            let metode = document.getElementById('metode-bayar').value;
 
             fetch('/transaksi/bayar', {
                     method: 'POST',
@@ -350,16 +347,44 @@
                     },
                     body: JSON.stringify({
                         cart: cart,
-                        diskon: diskon,
-                        admin_password: adminPass
+                        diskon: document.getElementById('input-diskon').value,
+                        uang_bayar: document.getElementById('uang-diterima').value,
+                        admin_password: document.getElementById('admin-pass').value,
+                        metode: metode // Kirim metode bayar
                     })
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Mainkan suara sukses (opsional)
-                        alert("✅ Transaksi Berhasil!\nKembalian: " + data.msg);
-                        window.location.reload();
+
+                        if (data.metode === 'online') {
+                            // --- JIKA ONLINE: MUNCUL POPUP MIDTRANS ---
+                            window.snap.pay(data.snap_token, {
+                                onSuccess: function(result) {
+                                    alert("✅ Pembayaran Berhasil!");
+                                    cetakStrukDanReload(data.sale_id);
+                                },
+                                onPending: function(result) {
+                                    alert("⏳ Menunggu Pembayaran...");
+                                    cetakStrukDanReload(data.sale_id);
+                                },
+                                onError: function(result) {
+                                    alert("❌ Pembayaran Gagal!");
+                                    btn.innerHTML = originalText;
+                                    btn.disabled = false;
+                                },
+                                onClose: function() {
+                                    alert('Anda menutup popup tanpa menyelesaikan pembayaran');
+                                    btn.innerHTML = originalText;
+                                    btn.disabled = false;
+                                }
+                            });
+                        } else {
+                            // --- JIKA TUNAI: PROSES SEPERTI BIASA ---
+                            alert("✅ Transaksi Berhasil!\nKembalian: Rp " + data.msg);
+                            cetakStrukDanReload(data.sale_id);
+                        }
+
                     } else {
                         alert("❌ Gagal: " + data.msg);
                         btn.innerHTML = originalText;
@@ -373,7 +398,11 @@
                     btn.disabled = false;
                 });
         }
-    </script>
-</body>
 
-</html>
+        function cetakStrukDanReload(id) {
+            let urlStruk = "/transaksi/struk/" + id;
+            window.open(urlStruk, '_blank', 'width=400,height=600');
+            window.location.reload();
+        }
+    </script>
+@endpush

@@ -52,19 +52,33 @@ class AuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
             
-            // Cek apakah email sudah terdaftar?
+            // 1. Cari apakah email ini sudah ada di database?
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
-                // Update ID Google
+                // A. JIKA SUDAH ADA (Login)
+                // Update Google ID-nya biar sinkron, lalu login
                 $user->update(['google_id' => $googleUser->getId()]);
                 Auth::login($user);
                 return redirect('/dashboard');
             } else {
-                return redirect('/login')->with('error', 'Email Google ini belum diregistrasi!');
+                // B. JIKA BELUM ADA (Register Otomatis)
+                // Kita buatkan akun baru
+                $newUser = User::create([
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'google_id' => $googleUser->getId(),
+                    'role' => 'kasir',     // Default jadi Kasir
+                    'password' => null,    // Tidak punya password (login harus pakai Google terus)
+                ]);
+
+                // Langsung login
+                Auth::login($newUser);
+                return redirect('/dashboard')->with('success', 'Akun berhasil dibuat otomatis!');
             }
+
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Gagal Login Google.');
+            return redirect('/login')->with('error', 'Gagal Login Google. Error: ' . $e->getMessage());
         }
     }
 

@@ -51,7 +51,7 @@ return new class extends Migration
             $table->foreignId('approved_by')->nullable()->constrained('users'); // ID Admin jika diskon > 10rb
             
             $table->decimal('grand_total', 15, 2);
-            $table->enum('status', ['lunas', 'batal'])->default('lunas');
+$table->enum('status', ['lunas', 'pending', 'batal'])->default('pending');
             $table->timestamps();
         });
 
