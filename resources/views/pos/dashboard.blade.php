@@ -179,10 +179,10 @@
 
                         <div class="row g-2 mb-2">
                             <div class="col-6">
-                                <label class="small fw-bold text-muted">Metode</label>
+                                <label class="small fw-bold tWext-muted">Metode</label>
                                 <select id="payment-method" class="form-select form-select-sm" onchange="cekMetodeBayar()">
                                     <option value="cash">💵 Cash</option>
-                                    <option value="qris">📱 QRIS / Transfer (Midtrans)</option>
+                                    <option value="online">📱 QRIS / Transfer </option>
                                     <option value="utang">📝 Utang</option>
                                 </select>
                             </div>

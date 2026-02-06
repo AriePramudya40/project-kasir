@@ -45,7 +45,7 @@ return new class extends Migration
             $table->string('no_faktur')->unique();
             $table->foreignId('user_id')->constrained();
             $table->string('customer_name')->nullable();
-            $table->enum('payment_method', ['cash', 'transfer', 'utang', 'qris'])->default('cash');
+            $table->enum('payment_method', ['cash', 'transfer', 'utang', 'online'])->default('cash');
 
             $table->decimal('subtotal', 15, 2);
             $table->decimal('diskon', 15, 2)->default(0);

@@ -56,7 +56,7 @@ class PosController extends Controller
                 }
             }
             
-            $statusTransaksi = ($request->payment_method == 'utang' || $request->payment_method == 'qris') ? 'belum_lunas' : 'lunas';
+            $statusTransaksi = ($request->payment_method == 'utang' || $request->payment_method == 'online') ? 'belum_lunas' : 'lunas';
 
             $sale = Sale::create([
                 'no_faktur' => 'INV-' . time(),
@@ -85,7 +85,7 @@ class PosController extends Controller
 
             // --- LOGIKA MIDTRANS ---
             $snapToken = null;
-            if ($request->payment_method == 'qris') {
+            if ($request->payment_method == 'online') {
                  // ... (Kode Midtrans Tetap Sama) ...
                  Config::$serverKey = env('MIDTRANS_SERVER_KEY');
                  Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
