@@ -11,9 +11,10 @@ class Product extends Model
 
     // Izinkan kolom ini diisi secara massal
     protected $fillable = [
-        'kode', 
-        'nama', 
-        'harga', 
-        'stok'
+    'kode', 
+    'nama', 
+    'harga', 
+    'stok',
+    'image_url' // <--- Tambahkan ini
     ];
 }

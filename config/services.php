@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -35,11 +34,31 @@ return [
         ],
     ],
 
-    // --- TAMBAHKAN BAGIAN INI ---
+    /*
+    |--------------------------------------------------------------------------
+    | Google OAuth Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Konfigurasi untuk Google OAuth login
+    |
+    */
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Serper API Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Serper.dev API untuk pencarian gambar produk otomatis
+    | https://serper.dev
+    |
+    */
+    'serper' => [
+        'api_key' => env('SERPER_API_KEY'),
     ],
 
 ];
