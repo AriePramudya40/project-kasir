@@ -8,14 +8,16 @@
 
     <title>@yield('title', 'Sumber Bangunan')</title>
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
+
+    {{-- Script Midtrans (Tetap biarkan eksternal karena ini gateway pembayaran) --}}
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
 
-    {{-- CSS & JS Global --}}
+    {{-- Load CSS & JS via Vite --}}
+    {{-- HAPUS CDN bootstrap-icons yang ada sebelumnya --}}
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
-        /* Variabel Global - Konsisten di semua halaman */
+        /* Variabel Global */
         :root {
             --brand-red: #9A1B1F;
             --brand-gold: #FFD700;
@@ -24,10 +26,8 @@
         body {
             background-color: #f8f9fa;
             font-family: sans-serif;
-            /* Sesuaikan jika ada font khusus */
         }
 
-        /* Helper Classes */
         .text-brand {
             color: var(--brand-red);
         }

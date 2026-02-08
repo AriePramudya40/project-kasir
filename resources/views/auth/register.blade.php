@@ -70,8 +70,6 @@
     </div>
 
     <script type="module">
-        import Swal from 'sweetalert2';
-        window.Swal = Swal;
         @if ($errors->any())
             Swal.fire({
                 icon: 'warning',

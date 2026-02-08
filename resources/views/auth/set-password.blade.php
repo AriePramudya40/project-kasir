@@ -40,10 +40,7 @@
     </div>
 
     <script type="module">
-        import Swal from 'sweetalert2';
-        window.Swal = Swal;
-
-        // Menampilkan Error Validasi (Misal: Password tidak cocok)
+        // Menampilkan Error Validasi
         @if ($errors->any())
             Swal.fire({
                 icon: 'warning',
@@ -59,7 +56,7 @@
             });
         @endif
 
-        // Menampilkan Info (Misal: "Wajib buat password")
+        // Menampilkan Info
         @if (session('info'))
             Swal.fire({
                 icon: 'info',

@@ -1,7 +1,12 @@
 @import 'tailwindcss';
+
+// Import Bootstrap SCSS
 @import 'bootstrap/scss/bootstrap';
+
+// Import Bootstrap Icons langsung dari node_modules
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
+// Konfigurasi Source Tailwind v4 (sesuai file Anda sebelumnya)
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
