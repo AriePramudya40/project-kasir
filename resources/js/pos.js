@@ -1,9 +1,9 @@
 import Swal from 'sweetalert2';
 
-// State Variables
+// ================= STATE VARIABLES =================
 let cart = [];
 let subtotal = 0;
-// Mengambil role user dari meta tag head (tambahkan meta ini di layout app) atau hidden input
+// Mengambil role user dari meta tag (pastikan ada di layout) atau default ke 'kasir'
 const userRole = document.querySelector('meta[name="user-role"]')?.content || 'kasir'; 
 
 $(function() {
@@ -11,20 +11,22 @@ $(function() {
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 2. Event Listeners (Pengganti onkeyup/onclick di HTML)
+    // 2. Event Listeners
     
-    // Search Produk
+    // --- Search Produk ---
     $('#search-input').on('keyup', function() {
         const keyword = $(this).val().toLowerCase();
         $('.product-item').each(function() {
             const name = $(this).data('name-lower');
             const code = $(this).data('code');
+            // Show jika nama ATAU kode cocok
             $(this).toggleClass('d-none', !(name.includes(keyword) || code.includes(keyword)));
         });
     });
 
-    // Tambah ke Keranjang (Delegation karena item statis tapi good practice)
-    $('.btn-add-cart').on('click', function() {
+    // --- Tambah ke Keranjang ---
+    // Menggunakan delegation juga agar aman jika produk di-load via AJAX nanti
+    $(document).on('click', '.btn-add-cart', function() {
         const item = $(this).closest('.product-item');
         addToCart(
             item.data('id'),
@@ -33,38 +35,51 @@ $(function() {
         );
     });
 
-    // Reset Cart
+    // --- Reset Cart ---
     $('#btn-reset-cart').on('click', resetCart);
 
-    // Update Qty di Cart (Delegation wajib karena elemen dinamis)
+    // --- Update Qty di Cart ---
     $('#cart-items').on('change', '.qty-input', function() {
         const index = $(this).data('index');
         const newQty = parseInt($(this).val());
         updateQty(index, newQty);
     });
 
-    // Hapus Item di Cart
+    // --- Hapus Item di Cart ---
     $('#cart-items').on('click', '.btn-remove-item', function() {
         const index = $(this).data('index');
         hapusItem(index);
     });
 
-    // Hitung Total saat Diskon berubah
+    // --- Hitung Total saat Diskon berubah ---
     $('#input-diskon').on('input', renderCartCalculations);
 
-    // Proses Bayar
+    // --- Proses Bayar ---
     $('#btn-process-pay').on('click', prosesBayar);
 
-    // Edit Barang (Admin)
-    $('.btn-edit-barang').on('click', function(e) {
-        e.stopPropagation(); // Stop agar tidak memicu add to cart
-        const id = $(this).closest('.product-item').data('id');
-        editBarang(id);
+    // --- Edit Barang (Admin) [PERBAIKAN UTAMA] ---
+    // Menggunakan $(document).on() untuk menangani event delegation
+    $(document).on('click', '.btn-edit-barang', function(e) {
+        e.preventDefault();
+        e.stopPropagation(); // Mencegah trigger 'Add to Cart'
+
+        const productItem = $(this).closest('.product-item');
+        const id = productItem.data('id');
+
+        console.log('Edit clicked for ID:', id); // Debugging
+
+        if (id) {
+            editBarang(id);
+        } else {
+            Swal.fire('Error', 'ID Produk tidak ditemukan', 'error');
+        }
     });
     
-    // Hapus Barang (Admin)
-    $('.btn-delete-barang').on('click', function(e) {
+    // --- Hapus Barang (Admin) ---
+    $(document).on('click', '.btn-delete-barang', function(e) {
+        e.preventDefault();
         e.stopPropagation();
+        
         const parent = $(this).closest('.product-item');
         hapusBarang(parent.data('id'), parent.data('name'));
     });
@@ -86,7 +101,7 @@ function addToCart(id, name, price) {
         cart.push({ id, name, price, qty: 1 });
     }
     
-    // Gunakan Toast Swal yang sederhana
+    // Toast Notification
     const Toast = Swal.mixin({
         toast: true, position: 'top-end', showConfirmButton: false, timer: 1000, timerProgressBar: true
     });
@@ -139,7 +154,7 @@ function renderCartCalculations() {
     $('#label-subtotal').text(formatRupiah(subtotal));
     $('#label-total').text(formatRupiah(grandTotal));
 
-    // Logic Admin Approval
+    // Logic Admin Approval (jika diskon terlalu besar)
     if (userRole === 'kasir' && diskon > 10000) {
         $('#box-admin').removeClass('d-none');
     } else {
@@ -183,7 +198,7 @@ function prosesBayar() {
     const bayar = parseInt($('#input-bayar').val()) || 0;
     const method = $('#payment-method').val();
     
-    // Validasi sederhana
+    // Validasi Pembayaran
     if (method !== 'utang' && bayar < grandTotal) {
         return Swal.fire('Kurang Bayar', `Kurang: ${formatRupiah(grandTotal - bayar)}`, 'error');
     }
@@ -197,7 +212,6 @@ function prosesBayar() {
         confirmButtonText: 'Bayar',
         showLoaderOnConfirm: true,
         preConfirm: () => {
-            // Menggunakan Axios (Lebih bersih daripada fetch)
             return axios.post('/transaksi/bayar', {
                 cart: cart,
                 diskon: diskon,
@@ -208,91 +222,88 @@ function prosesBayar() {
             }).then(response => {
                 return response.data;
             }).catch(error => {
-                Swal.showValidationMessage(`Request failed: ${error.response.data.message || error.message}`);
+                const msg = error.response ? error.response.data.message : error.message;
+                Swal.showValidationMessage(`Gagal: ${msg}`);
             });
         }
     }).then((result) => {
         if (result.isConfirmed) {
             const data = result.value;
-            if (data.status === 'success') {
+            if (data && data.status === 'success') {
                 Swal.fire('Berhasil', 'Transaksi sukses!', 'success').then(() => {
                     window.open(`/transaksi/struk/${data.sale_id}`, '_blank');
                     location.reload();
                 });
-            } else {
-                Swal.fire('Gagal', data.msg, 'error');
             }
         }
     });
 }
 
-// Admin Functions (Edit/Delete) - Contoh penggunaan Axios GET
+// ================= ADMIN FUNCTIONS =================
+
 function editBarang(id) {
-    console.log('Edit barang ID:', id); // Debug log
-    
+    // Tampilkan Loading
     Swal.fire({
-        title: 'Memuat data...',
+        title: 'Memuat Data...',
         allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
+        didOpen: () => Swal.showLoading()
     });
 
     axios.get(`/produk/${id}`)
         .then(res => {
-            console.log('Response:', res.data); // Debug log
             Swal.close();
             
             if (res.data.status === 'success') {
                 const p = res.data.data;
                 
-                // Isi form modal
+                // 1. Isi Form di Modal
                 $('#edit-kode').val(p.kode);
                 $('#edit-nama').val(p.nama);
                 $('#edit-harga').val(p.harga);
                 $('#edit-stok').val(p.stok);
                 $('#edit-refresh-image').prop('checked', false);
                 
-                // Simpan ID untuk update nanti
-                $('#formEditBarang').data('product-id', p.id);
+                // 2. Set Action URL pada Form agar update ke ID yang benar
+                const form = $('#formEditBarang');
+                form.attr('action', `/produk/${p.id}`); // PENTING: Update URL Action
                 
-                // Show modal
+                // 3. Pastikan method spoofing (PUT) ada
+                if (form.find('input[name="_method"]').length === 0) {
+                    form.append('<input type="hidden" name="_method" value="PUT">');
+                }
+                
+                // 4. Tampilkan Modal
                 $('#modalEditBarang').modal('show');
             } else {
                 Swal.fire('Error', res.data.message || 'Data tidak ditemukan', 'error');
             }
         })
         .catch(err => {
-            console.error('Error:', err); // Debug log
-            
-            let errorMsg = 'Gagal mengambil data produk';
-            
-            if (err.response) {
-                // Server merespon dengan error
-                errorMsg = err.response.data.message || 'Server error';
-            } else if (err.request) {
-                // Request dikirim tapi tidak ada respon
-                errorMsg = 'Server tidak merespon. Pastikan Laravel berjalan.';
-            }
-            
-            Swal.fire('Error', errorMsg, 'error');
+            console.error('Error Edit:', err);
+            let msg = 'Gagal mengambil data.';
+            if (err.response) msg = err.response.data.message || msg;
+            Swal.fire('Error', msg, 'error');
         });
 }
 
 function hapusBarang(id, nama) {
     Swal.fire({
         title: `Hapus ${nama}?`,
+        text: "Data tidak bisa dikembalikan!",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        confirmButtonText: 'Hapus'
+        confirmButtonText: 'Ya, Hapus'
     }).then((result) => {
         if (result.isConfirmed) {
             axios.delete(`/produk/${id}`)
-                .then(() => {
-                    Swal.fire('Terhapus', 'Produk dihapus', 'success').then(() => location.reload());
+                .then(res => {
+                    Swal.fire('Terhapus', res.data.message, 'success')
+                        .then(() => location.reload());
                 })
-                .catch(() => Swal.fire('Gagal', 'Terjadi kesalahan', 'error'));
+                .catch(err => {
+                    Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus', 'error');
+                });
         }
     });
 }

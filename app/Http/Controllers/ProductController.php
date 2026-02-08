@@ -105,10 +105,30 @@ class ProductController extends Controller
 
             $product->save();
 
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Produk berhasil diupdate!',
+                    'data' => [
+                        'id' => $product->id,
+                        'kode' => $product->kode,
+                        'nama' => $product->nama,
+                        'harga' => $product->harga,
+                        'stok' => $product->stok,
+                        'image_url' => $product->image_url,
+                    ],
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Produk berhasil diupdate!');
             
         } catch (\Exception $e) {
-            Log::error('Error update produk: ' . $e->getMessage());
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal mengupdate produk.',
+                ], 500);
+            }
             return redirect()->back()->with('error', 'Gagal mengupdate produk.');
         }
     }
