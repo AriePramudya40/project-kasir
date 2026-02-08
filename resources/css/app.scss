@@ -1,13 +1,97 @@
-@import 'tailwindcss';
-@import 'bootstrap/scss/bootstrap';
-@import 'bootstrap-icons/font/bootstrap-icons.css';
+/* 1. Import Library (Sass akan otomatis cari di node_modules) */
+@import 'bootstrap/dist/css/bootstrap'; 
+@import 'sweetalert2/dist/sweetalert2';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* 2. Variables & Config */
+/* Brand Colors */
+:root {
+    --brand-red: #9A1B1F;
+    --brand-gold: #FFD700;
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* Custom Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.bg-brand {
+    background-color: var(--brand-red) !important;
+    border-bottom: 4px solid var(--brand-gold);
+}
+
+.btn-brand {
+    background-color: var(--brand-red);
+    border-color: var(--brand-red);
+    color: white;
+    transition: all 0.3s;
+}
+
+.btn-brand:hover {
+    background-color: #7a1518;
+    border-color: #7a1518;
+    color: var(--brand-gold);
+}
+
+.product-card {
+    position: relative;
+    transition: all 0.2s;
+}
+
+.product-card:hover {
+    border-color: var(--brand-red);
+    cursor: pointer;
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.product-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: none;
+    gap: 4px;
+    z-index: 10;
+}
+
+.product-card:hover .product-actions {
+    display: flex;
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-action:hover {
+    transform: scale(1.1);
+}
+
+.scroll-area-products {
+    height: 78vh;
+    overflow-y: auto;
+}
+
+.scroll-area-cart {
+    height: 45vh;
+    overflow-y: auto;
+}
+
+#digital-clock {
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.navbar-logo {
+    height: 45px;
+    width: auto;
+    margin-right: 10px;
+    filter: drop-shadow(0px 0px 1px rgba(255, 255, 255, 0.5));
 }

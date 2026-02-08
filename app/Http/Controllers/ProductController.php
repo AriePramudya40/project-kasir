@@ -44,19 +44,134 @@ class ProductController extends Controller
         // 3. Simpan ke Database
         try {
             Product::create([
-                'kode' => strtoupper(trim($validated['kode'])), // Normalisasi kode
-                'nama' => ucwords(trim($validated['nama'])), // Normalisasi nama
+                'kode' => strtoupper(trim($validated['kode'])),
+                'nama' => ucwords(trim($validated['nama'])),
                 'harga' => $validated['harga'],
                 'stok' => $validated['stok'],
                 'image_url' => $imageUrl
             ]);
 
-            return redirect()->back()->with('success', 'Produk berhasil ditambahkan dengan gambar otomatis!');
+            return redirect()->back()->with('success', 'Produk berhasil ditambahkan!');
             
         } catch (\Exception $e) {
             Log::error('Error menyimpan produk: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal menyimpan produk. Silakan coba lagi.');
+            return redirect()->back()->with('error', 'Gagal menyimpan produk.');
         }
+    }
+
+    /**
+     * Update produk yang sudah ada
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(Request $request, $id)
+    {
+        // Cari produk
+        $product = Product::findOrFail($id);
+
+        // Validasi input
+        $validated = $request->validate([
+            'kode' => 'required|unique:products,kode,' . $id,
+            'nama' => 'required|string|max:255',
+            'harga' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0',
+            'refresh_image' => 'nullable|boolean', // Opsi untuk refresh gambar
+        ], [
+            'kode.required' => 'Kode barang wajib diisi',
+            'kode.unique' => 'Kode barang sudah digunakan',
+            'nama.required' => 'Nama barang wajib diisi',
+            'harga.required' => 'Harga wajib diisi',
+            'harga.min' => 'Harga tidak boleh negatif',
+            'stok.required' => 'Stok wajib diisi',
+            'stok.min' => 'Stok tidak boleh negatif',
+        ]);
+
+        try {
+            // Update data dasar
+            $product->kode = strtoupper(trim($validated['kode']));
+            $product->nama = ucwords(trim($validated['nama']));
+            $product->harga = $validated['harga'];
+            $product->stok = $validated['stok'];
+
+            // Jika user request refresh gambar atau nama berubah
+            if ($request->has('refresh_image') || $product->isDirty('nama')) {
+                $newImageUrl = $this->cariGambarSerper($validated['nama']);
+                if ($newImageUrl) {
+                    $product->image_url = $newImageUrl;
+                }
+            }
+
+            $product->save();
+
+            return redirect()->back()->with('success', 'Produk berhasil diupdate!');
+            
+        } catch (\Exception $e) {
+            Log::error('Error update produk: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengupdate produk.');
+        }
+    }
+
+    /**
+     * Hapus produk
+     *
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroy($id)
+{
+    try {
+        $product = Product::findOrFail($id);
+        $namaBarang = $product->nama;
+        
+        $product->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Produk '{$namaBarang}' berhasil dihapus!"
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Error hapus produk: ' . $e->getMessage());
+        
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Gagal menghapus produk: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+    /**
+     * Get single product data (untuk AJAX)
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id)
+    {
+    try {
+        $product = Product::findOrFail($id);
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'id' => $product->id,
+                'kode' => $product->kode,
+                'nama' => $product->nama,
+                'harga' => $product->harga,
+                'stok' => $product->stok,
+                'image_url' => $product->image_url
+            ]
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error fetching product: ' . $e->getMessage());
+        
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Produk tidak ditemukan'
+        ], 404);
+    }
     }
 
     /**
@@ -67,23 +182,20 @@ class ProductController extends Controller
      */
     private function cariGambarSerper(string $keyword): ?string
     {
-        // Ambil API key dari config
         $apiKey = config('services.serper.api_key');
 
-        // Jika API key tidak tersedia, return null
         if (empty($apiKey)) {
             Log::warning('Serper API key tidak ditemukan di config');
             return null;
         }
 
         try {
-            // Request ke Serper API
             $response = Http::withHeaders([
                 'X-API-KEY' => $apiKey,
                 'Content-Type' => 'application/json'
             ])
             ->timeout(10)
-            ->retry(2, 100) // Retry 2x jika gagal
+            ->retry(2, 100)
             ->post('https://google.serper.dev/images', [
                 'q' => $keyword . ' kemasan produk indonesia',
                 'gl' => 'id',
@@ -91,15 +203,12 @@ class ProductController extends Controller
                 'num' => 1
             ]);
 
-            // Cek apakah request berhasil
             if ($response->successful()) {
                 $data = $response->json();
                 
-                // Validasi struktur response
                 if (isset($data['images']) && is_array($data['images']) && count($data['images']) > 0) {
                     $imageUrl = $data['images'][0]['imageUrl'] ?? null;
                     
-                    // Validasi URL gambar
                     if ($imageUrl && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
                         return $imageUrl;
                     }

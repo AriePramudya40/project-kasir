@@ -52,6 +52,9 @@ Route::middleware('auth')->group(function () {
     
     // Product Management
     Route::post('/produk/tambah', [ProductController::class, 'store'])->name('produk.store');
+    Route::get('/produk/{id}', [ProductController::class, 'show'])->name('produk.show'); // Get single product (AJAX)
+    Route::put('/produk/{id}', [ProductController::class, 'update'])->name('produk.update');
+    Route::delete('/produk/{id}', [ProductController::class, 'destroy'])->name('produk.destroy');
     
     // Transactions
     Route::post('/transaksi/bayar', [PosController::class, 'bayar'])->name('transaksi.bayar');
