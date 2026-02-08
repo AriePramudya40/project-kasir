@@ -10,10 +10,7 @@ use Illuminate\Support\Facades\Log;
 class ProductController extends Controller
 {
     /**
-     * Menyimpan produk baru dengan gambar otomatis dari Serper API
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Menyimpan produk baru
      */
     public function store(Request $request)
     {
@@ -33,87 +30,109 @@ class ProductController extends Controller
             'stok.min' => 'Stok tidak boleh negatif',
         ]);
 
-        // 2. Cari Gambar Otomatis via Serper API
+        // 2. Cari Gambar Otomatis
         $imageUrl = $this->cariGambarSerper($validated['nama']);
-
-        // Jika tidak ketemu, gunakan placeholder
         if (!$imageUrl) {
             $imageUrl = 'https://via.placeholder.com/300x300?text=No+Image';
         }
 
-        // 3. Simpan ke Database
+        // 3. Simpan
         try {
             Product::create([
-                'kode' => strtoupper(trim($validated['kode'])), // Normalisasi kode
-                'nama' => ucwords(trim($validated['nama'])), // Normalisasi nama
+                'kode' => strtoupper(trim($validated['kode'])),
+                'nama' => ucwords(trim($validated['nama'])),
                 'harga' => $validated['harga'],
                 'stok' => $validated['stok'],
                 'image_url' => $imageUrl
             ]);
 
-            return redirect()->back()->with('success', 'Produk berhasil ditambahkan dengan gambar otomatis!');
+            return redirect()->back()->with('success', 'Produk berhasil ditambahkan!');
             
         } catch (\Exception $e) {
             Log::error('Error menyimpan produk: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal menyimpan produk. Silakan coba lagi.');
+            return redirect()->back()->with('error', 'Gagal menyimpan produk.');
         }
     }
 
     /**
-     * Mencari gambar produk menggunakan Serper API
-     *
-     * @param string $keyword
-     * @return string|null
+     * Update produk yang sudah ada
+     */
+    public function update(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+
+        // 1. Validasi (Kode boleh sama jika milik produk ini sendiri)
+        $validated = $request->validate([
+            'kode' => 'required|unique:products,kode,'.$id,
+            'nama' => 'required|string|max:255',
+            'harga' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0',
+        ]);
+
+        try {
+            // Jika nama berubah, kita cari gambar baru (opsional, bisa dimatikan jika tidak ingin ganti gambar)
+            if ($request->nama !== $product->nama) {
+                 $imageUrl = $this->cariGambarSerper($request->nama);
+                 if ($imageUrl) {
+                     $product->image_url = $imageUrl;
+                 }
+            }
+
+            $product->update([
+                'kode' => strtoupper(trim($validated['kode'])),
+                'nama' => ucwords(trim($validated['nama'])),
+                'harga' => $validated['harga'],
+                'stok' => $validated['stok'],
+                // image_url diupdate di atas jika nama berubah
+            ]);
+
+            return redirect()->back()->with('success', 'Produk berhasil diperbarui!');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal update produk: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Hapus produk
+     */
+    public function destroy($id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+            $product->delete();
+            return redirect()->back()->with('success', 'Produk berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus produk (Mungkin sudah ada transaksi).');
+        }
+    }
+
+    /**
+     * Mencari gambar produk via Serper
      */
     private function cariGambarSerper(string $keyword): ?string
     {
-        // Ambil API key dari config
         $apiKey = config('services.serper.api_key');
-
-        // Jika API key tidak tersedia, return null
-        if (empty($apiKey)) {
-            Log::warning('Serper API key tidak ditemukan di config');
-            return null;
-        }
+        if (empty($apiKey)) return null;
 
         try {
-            // Request ke Serper API
             $response = Http::withHeaders([
                 'X-API-KEY' => $apiKey,
                 'Content-Type' => 'application/json'
-            ])
-            ->timeout(10)
-            ->retry(2, 100) // Retry 2x jika gagal
-            ->post('https://google.serper.dev/images', [
+            ])->timeout(5)->post('https://google.serper.dev/images', [
                 'q' => $keyword . ' kemasan produk indonesia',
-                'gl' => 'id',
-                'hl' => 'id',
-                'num' => 1
+                'gl' => 'id', 'hl' => 'id', 'num' => 1
             ]);
 
-            // Cek apakah request berhasil
             if ($response->successful()) {
                 $data = $response->json();
-                
-                // Validasi struktur response
-                if (isset($data['images']) && is_array($data['images']) && count($data['images']) > 0) {
-                    $imageUrl = $data['images'][0]['imageUrl'] ?? null;
-                    
-                    // Validasi URL gambar
-                    if ($imageUrl && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-                        return $imageUrl;
-                    }
+                if (!empty($data['images'][0]['imageUrl'])) {
+                    return $data['images'][0]['imageUrl'];
                 }
-            } else {
-                Log::warning('Serper API response error: ' . $response->status());
             }
-
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            Log::error('Serper API connection error: ' . $e->getMessage());
         } catch (\Exception $e) {
-            Log::error('Serper API unexpected error: ' . $e->getMessage());
+            Log::error('Serper API Error: ' . $e->getMessage());
         }
-
         return null;
     }
 }

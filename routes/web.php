@@ -11,21 +11,14 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Redirect root ke dashboard
 Route::get('/', function () {
-    return redirect('/dashboard');
+    return redirect()->route('dashboard');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Guest Routes (Belum Login)
-|--------------------------------------------------------------------------
-*/
+// Guest Routes
 Route::middleware('guest')->group(function () {
-    // Authentication
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'processLogin'])->name('login.process');
-    
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'processRegister'])->name('register.process');
     
@@ -34,33 +27,26 @@ Route::middleware('guest')->group(function () {
     Route::get('/auth/google/callback', [AuthController::class, 'googleCallback'])->name('auth.google.callback');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Authenticated Routes (Sudah Login)
-|--------------------------------------------------------------------------
-*/
+// Authenticated Routes
 Route::middleware('auth')->group(function () {
-    // Logout
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     
-    // Set Password (untuk user dari Google OAuth)
+    // Password Set (Google User)
     Route::get('/auth/set-password', [AuthController::class, 'showSetPassword'])->name('auth.set-password');
     Route::post('/auth/set-password', [AuthController::class, 'processSetPassword'])->name('auth.set-password.process');
     
-    // Dashboard & POS
+    // POS Dashboard
     Route::get('/dashboard', [PosController::class, 'index'])->name('dashboard');
     
-    // Product Management
+    // Product Management (Tambah, Update, Delete)
     Route::post('/produk/tambah', [ProductController::class, 'store'])->name('produk.store');
+    Route::put('/produk/update/{id}', [ProductController::class, 'update'])->name('produk.update'); // BARU
+    Route::delete('/produk/hapus/{id}', [ProductController::class, 'destroy'])->name('produk.destroy'); // BARU
     
-    // Transactions
+    // Transaksi
     Route::post('/transaksi/bayar', [PosController::class, 'bayar'])->name('transaksi.bayar');
     Route::get('/transaksi/struk/{id}', [PosController::class, 'cetakStruk'])->name('transaksi.struk');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Webhook Routes (Tanpa Authentication)
-|--------------------------------------------------------------------------
-*/
+// Webhook Midtrans
 Route::post('/midtrans/callback', [PosController::class, 'callback'])->name('midtrans.callback');
