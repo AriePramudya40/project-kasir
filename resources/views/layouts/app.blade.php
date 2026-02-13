@@ -7,14 +7,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Sumber Bangunan')</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
+    <link rel="apple-touch-icon" href="/logo.png">
 
     {{-- Script Midtrans (Tetap biarkan eksternal karena ini gateway pembayaran) --}}
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
 
     {{-- Load CSS & JS via Vite --}}
-    {{-- HAPUS CDN bootstrap-icons yang ada sebelumnya --}}
-    @vite(['resources/css/app.scss', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         /* Variabel Global */

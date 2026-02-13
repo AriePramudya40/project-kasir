@@ -1,24 +1,23 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     plugins: [
         laravel({
-            // Pastikan input ini mengarah ke .scss
-            input: ['resources/css/app.scss', 'resources/js/app.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
         }),
+        tailwindcss(),
     ],
-    // --- TAMBAHKAN BAGIAN INI ---
-    css: {
-        preprocessorOptions: {
-            scss: {
-                // Ini akan membungkam peringatan dari folder node_modules (Bootstrap)
-                quietDeps: true,
-                // Jika masih muncul, tambahkan ini:
-                silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'if-function'],
-            },
+    server: {
+        host: 'localhost',      // ✅ Ganti 0.0.0.0 → localhost
+        port: 5173,
+        cors: true,
+        https: false,           // Vite dev server via HTTP (Laravel proxy ke HTTPS)
+        watch: {
+            ignored: ['**/storage/framework/views/**'],
         },
     },
-    // ----------------------------
+    
 });

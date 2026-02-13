@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Xendit\Xendit;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,5 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::policy(Product::class, ProductPolicy::class);
     }
 }

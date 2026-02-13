@@ -1,8 +1,11 @@
 import './bootstrap';
 
-// Import seluruh bundle Bootstrap JS
-import 'bootstrap'; 
+import 'bootstrap-icons/font/bootstrap-icons.css'; 
 
-// Jika Anda butuh akses manual ke object bootstrap di console browser (opsional)
+// Import Bootstrap JS
 import * as bootstrap from 'bootstrap';
 window.bootstrap = bootstrap;
+
+// Import SweetAlert2
+import Swal from 'sweetalert2';
+window.Swal = Swal;

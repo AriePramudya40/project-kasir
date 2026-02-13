@@ -46,7 +46,10 @@ Route::middleware('auth')->group(function () {
     // Transaksi
     Route::post('/transaksi/bayar', [PosController::class, 'bayar'])->name('transaksi.bayar');
     Route::get('/transaksi/struk/{id}', [PosController::class, 'cetakStruk'])->name('transaksi.struk');
+    Route::get('/transaksi/cek-status/{id}', [PosController::class, 'cekStatusInvoice'])->name('transaksi.cek-status');
+    Route::get('/transaksi/update-semua-online', [PosController::class, 'updateSemuaStatusOnline'])->name('transaksi.update-semua-online');
+    Route::post('/transaksi/manual-update/{id}', [PosController::class, 'manualUpdateStatus'])->name('transaksi.manual-update');
 });
 
 // Webhook Midtrans
-Route::post('/midtrans/callback', [PosController::class, 'callback'])->name('midtrans.callback');
+Route::post('/xendit/callback', [PosController::class, 'callback'])->name('xendit.callback');
