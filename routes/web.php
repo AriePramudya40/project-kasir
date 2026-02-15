@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\LaporanController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,6 +31,8 @@ Route::middleware('guest')->group(function () {
 // Authenticated Routes
 Route::middleware('auth')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
     
     // Password Set (Google User)
     Route::get('/auth/set-password', [AuthController::class, 'showSetPassword'])->name('auth.set-password');
