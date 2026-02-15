@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\LaporanController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -49,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/transaksi/cek-status/{id}', [PosController::class, 'cekStatusInvoice'])->name('transaksi.cek-status');
     Route::get('/transaksi/update-semua-online', [PosController::class, 'updateSemuaStatusOnline'])->name('transaksi.update-semua-online');
     Route::post('/transaksi/manual-update/{id}', [PosController::class, 'manualUpdateStatus'])->name('transaksi.manual-update');
+
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
 });
 
 // Webhook Midtrans

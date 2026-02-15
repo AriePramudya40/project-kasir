@@ -1,80 +1,11 @@
 @extends('layouts.app')
 @section('content')
     <style>
-        /* --- VARIABEL TEMA (LIGHT MODE DEFAULT) --- */
-        :root {
-            --brand-red: #9A1B1F;
-            --brand-gold: #FFD700;
+        /* CSS Khusus Dashboard (Product Card, Cart, dll) */
 
-            /* Warna Dasar Light */
-            --bg-body: #f4f6f8;
-            --bg-card: #ffffff;
-            --bg-input: #f8f9fa;
-            --text-main: #2c3e50;
-            --text-muted: #6c757d;
-            --border-color: rgba(0, 0, 0, 0.08);
-            --shadow-color: rgba(0, 0, 0, 0.05);
-            --modal-bg: #ffffff;
-        }
-
-        /* --- DARK MODE OVERRIDES --- */
-        body.dark-mode {
-            /* Warna Dasar Dark */
-            --bg-body: #121212;
-            --bg-card: #1e1e1e;
-            --bg-input: #2d2d2d;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --shadow-color: rgba(0, 0, 0, 0.5);
-            --modal-bg: #242424;
-        }
-
-        /* Override Bootstrap Classes untuk Dark Mode */
-        body.dark-mode .bg-white {
-            background-color: var(--bg-card) !important;
-        }
-
-        body.dark-mode .bg-light {
-            background-color: var(--bg-input) !important;
-        }
-
-        body.dark-mode .text-dark {
-            color: var(--text-main) !important;
-        }
-
-        body.dark-mode .text-muted {
-            color: var(--text-muted) !important;
-        }
-
-        body.dark-mode .card {
-            background-color: var(--bg-card);
-            border-color: var(--border-color);
-        }
-
-        body.dark-mode .table {
-            color: var(--text-main);
-        }
-
+        /* Dark Mode Specific untuk elemen dashboard */
         body.dark-mode .table-hover tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        body.dark-mode .form-control {
-            background-color: var(--bg-input);
-            border-color: var(--border-color);
-            color: var(--text-main);
-        }
-
-        body.dark-mode .form-control:focus {
-            background-color: #333;
-            color: #fff;
-        }
-
-        body.dark-mode .form-select {
-            background-color: var(--bg-input);
-            border-color: var(--border-color);
-            color: var(--text-main);
         }
 
         body.dark-mode .input-group-text {
@@ -83,121 +14,19 @@
             color: var(--text-muted);
         }
 
-        body.dark-mode .modal-content {
-            background-color: var(--modal-bg);
-            color: var(--text-main);
+        body.dark-mode #search::placeholder {
+            color: #ffffff !important;
+            opacity: 0.9 !important;
         }
 
-        body.dark-mode .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%);
+        body.dark-mode #input-bayar {
+            color: #ffffff !important;
+            background-color: var(--bg-input);
         }
 
-        /* SweetAlert Dark Mode Fix */
-        body.dark-mode .swal2-popup {
-            background: var(--bg-card);
-            color: var(--text-main);
-        }
-
-        /* --- GLOBAL STYLES --- */
-        body {
-            background-color: var(--bg-body);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: var(--text-main);
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        /* --- NAVBAR --- */
-        .navbar-custom {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 0.8rem 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 20px var(--shadow-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.3s ease;
-        }
-
-        .navbar-brand-text {
-            line-height: 1.1;
-        }
-
-        .brand-title {
-            color: var(--brand-red);
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            font-size: 1.25rem;
-        }
-
-        .brand-subtitle {
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        /* Widget Jam */
-        .clock-widget {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: 50px;
-            padding: 8px 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-main);
-            font-variant-numeric: tabular-nums;
-            transition: all 0.3s ease;
-        }
-
-        /* User & Theme Toggle */
-        .user-pill {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 6px 6px 6px 15px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 50px;
-            transition: all 0.2s;
-        }
-
-        .user-pill:hover {
-            border-color: var(--brand-red);
-            box-shadow: 0 2px 10px rgba(154, 27, 31, 0.1);
-        }
-
-        .user-avatar {
-            width: 38px;
-            height: 38px;
-            background: linear-gradient(135deg, var(--brand-red), #9A1B1F);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1rem;
-        }
-
-        .theme-toggle-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .theme-toggle-btn:hover {
-            background: var(--bg-input);
-            transform: rotate(15deg);
+        body.dark-mode #customer-name::placeholder {
+            color: #888888 !important;
+            background-color: var(--bg-input);
         }
 
         /* --- PRODUCT CARD --- */
@@ -256,6 +85,7 @@
             overflow-y: auto;
         }
 
+        /* Scrollbar Custom */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -284,47 +114,6 @@
             box-shadow: 0 0 0 0.25rem rgba(154, 27, 31, 0.15);
         }
 
-        body.dark-mode #modalEditBarang .modal-header {
-            color: #212529 !important;
-            /* hitam Bootstrap */
-        }
-
-        body.dark-mode #modalEditBarang .modal-header .modal-title {
-            color: #212529 !important;
-        }
-
-        body.dark-mode #modalEditBarang .btn-close {
-            filter: none !important;
-            /* biar icon close tetap normal */
-        }
-
-        body.dark-mode #search::placeholder {
-            color: #ffffff !important;
-            opacity: 0.9 !important;
-        }
-
-        body.dark-mode #search:-ms-input-placeholder {
-            color: #ffffff !important;
-        }
-
-        body.dark-mode #search::-ms-input-placeholder {
-            color: #ffffff !important;
-        }
-
-        body.dark-mode #input-bayar {
-            color: #ffffff !important;
-            background-color: var(--bg-input);
-        }
-
-        body.dark-mode #input-bayar::placeholder {
-            color: rgba(255, 255, 255, 0.7) !important;
-        }
-
-        body.dark-mode #customer-name::placeholder {
-            color: #888888 !important;
-            background-color: var(--bg-input);
-        }
-
         /* Tombol Aksi Utama */
         .btn-primary-action {
             background: var(--brand-red);
@@ -332,16 +121,9 @@
             color: #fff !important;
             font-weight: 700;
             letter-spacing: 0.3px;
-            transition:
-                transform 0.18s ease,
-                box-shadow 0.18s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
 
-        .btn-primary-action i {
-            color: inherit;
-        }
-
-        /* Hover – timbul tanpa glow */
         .btn-primary-action:hover,
         .btn-primary-action:focus {
             color: #fff !important;
@@ -350,24 +132,28 @@
             background: var(--brand-red);
         }
 
-        /* Active – ditekan */
         .btn-primary-action:active {
-            color: #fff !important;
             transform: translateY(0);
             box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4);
         }
 
-        /* ===== MODAL TAMBAH BARANG – BRAND STYLE ===== */
-        #modalTambahBarang .modal-content {
-            background: var(--modal-bg);
+        /* ===== FIX MODAL STYLES ===== */
+        /* Paksa background putih saat Light Mode */
+        .modal-content {
+            background-color: #ffffff !important;
             border-radius: 18px;
+            color: #333;
         }
 
-        /* Header */
+        /* Paksa background gelap saat Dark Mode */
+        body.dark-mode .modal-content {
+            background-color: #242424 !important;
+            color: #e0e0e0;
+        }
+
+        /* Header & Input di dalam Modal */
         #modalTambahBarang .modal-header {
-            background: linear-gradient(135deg,
-                    var(--brand-red),
-                    #7f1417);
+            background: linear-gradient(135deg, var(--brand-red), #7f1417);
             border: none;
         }
 
@@ -376,17 +162,25 @@
             letter-spacing: 0.3px;
         }
 
-        /* Close button */
         #modalTambahBarang .btn-close {
             filter: invert(1) brightness(200%);
         }
 
-        /* Input */
-        #modalTambahBarang .form-control {
-            background: var(--bg-input);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
+        /* Fix Input Modal di Dark Mode */
+        #modalTambahBarang .form-control,
+        #modalEditBarang .form-control {
+            background-color: #f8f9fa;
+            /* Default input terang */
+            color: #333;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
+        }
+
+        body.dark-mode #modalTambahBarang .form-control,
+        body.dark-mode #modalEditBarang .form-control {
+            background-color: #2d2d2d !important;
+            color: #fff !important;
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
         #modalTambahBarang .form-control:focus {
@@ -394,7 +188,6 @@
             box-shadow: 0 0 0 0.2rem rgba(154, 27, 31, 0.25);
         }
 
-        /* Footer button */
         #modalTambahBarang .modal-footer .btn {
             background: var(--brand-red);
             border: none;
@@ -411,207 +204,150 @@
         }
     </style>
 
-    <div class="container-fluid px-4 py-3">
-        <div class="navbar-custom">
-            <div class="d-flex align-items-center">
-                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 42px; width: auto; margin-right: 15px;">
-                <div class="d-flex flex-column navbar-brand-text">
-                    <span class="brand-title">SUMBER BANGUNAN</span>
-                    <span class="brand-subtitle"><i class="bi bi-bricks me-1"></i>Material & Konstruksi</span>
-                </div>
-            </div>
-
-            <div class="d-none d-lg-flex clock-widget shadow-sm">
-                <i class="bi bi-clock text-danger"></i>
-                <div class="d-flex flex-column align-items-start" style="line-height: 1.2;">
-                    <span id="digital-clock" class="fw-bold fs-5">00:00</span>
-                    <small id="date-text" class="text-muted" style="font-size: 0.7rem;">...</small>
-                </div>
-            </div>
-
-            <div class="d-flex align-items-center gap-3">
-
-                <!-- Tombol Update Status Online -->
-                <button class="btn btn-sm btn-outline-success shadow-sm" onclick="updateSemuaStatusOnline()"
-                    title="Update Status Pembayaran Online" style="border-radius: 50px; padding: 8px 20px;">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span class="d-none d-md-inline ms-1">Sync Payment</span>
-                </button>
-
-                <button class="theme-toggle-btn shadow-sm" id="theme-toggle" title="Ganti Mode (Terang/Gelap)">
-                    <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
-                </button>
-
-                <div class="user-pill shadow-sm">
-                    <div class="text-end lh-1">
-                        <div class="fw-bold" style="font-size: 0.9rem; color: var(--text-main);">{{ Auth::user()->name }}
-                        </div>
-                        <small class="text-uppercase text-muted"
-                            style="font-size: 0.65rem; letter-spacing: 0.5px;">{{ Auth::user()->role }}</small>
+    <div class="row g-4">
+        <div class="col-lg-8 col-xl-9">
+            <div class="card shadow-sm border-0 h-100 rounded-4 overflow-hidden">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                    <div class="input-group shadow-sm" style="max-width: 400px;">
+                        <span class="input-group-text bg-white border-end-0 ps-3"><i
+                                class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="search" class="form-control border-start-0 py-2"
+                            placeholder="Cari nama barang..." onkeyup="filterProduk()">
                     </div>
-                    <div class="user-avatar shadow-sm">
-                        {{ substr(Auth::user()->name, 0, 1) }}
-                    </div>
+                    @if (Auth::user()->role == 'admin')
+                        <button type="button" class="btn btn-primary-action rounded-pill px-4 shadow-sm"
+                            data-bs-toggle="modal" data-bs-target="#modalTambahBarang">
+                            <i class="bi bi-plus-lg me-2"></i>Barang Baru
+                        </button>
+                    @endif
                 </div>
 
-                <a href="{{ route('logout') }}"
-                    class="btn btn-light text-danger btn-sm rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-                    style="width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-color);"
-                    title="Logout">
-                    <i class="bi bi-power fs-5"></i>
-                </a>
+                <div class="card-body bg-light scroll-area-products p-4">
+                    <div class="row g-3" id="product-list">
+                        @foreach ($products as $p)
+                            <div class="col-6 col-md-4 col-xl-3 product-item" data-name="{{ strtolower($p->nama) }}"
+                                data-kode="{{ strtolower($p->kode) }}">
+                                <div class="card product-card h-100 position-relative"
+                                    onclick="addToCart({{ $p->id }}, '{{ $p->nama }}', {{ $p->harga }})"
+                                    style="cursor: pointer;">
+
+                                    @if (Auth::user()->role == 'admin')
+                                        <div class="admin-actions">
+                                            <button class="btn btn-action-icon text-primary"
+                                                onclick="editProduk(event, {{ $p->id }}, '{{ $p->kode }}', '{{ $p->nama }}', {{ $p->harga }}, {{ $p->stok }})">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </button>
+                                            <button class="btn btn-action-icon text-danger"
+                                                onclick="hapusProduk(event, {{ $p->id }}, '{{ $p->nama }}')">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </div>
+                                    @endif
+
+                                    <div class="card-img-top bg-white d-flex align-items-center justify-content-center p-3"
+                                        style="height: 130px;">
+                                        @if (!empty($p->image_url))
+                                            <img src="{{ $p->image_url }}" class="w-100 h-100" style="object-fit: contain;"
+                                                onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'bi bi-box-seam text-secondary opacity-25\' style=\'font-size: 3rem;\'></i>';">
+                                        @else
+                                            <i class="bi bi-box-seam text-secondary opacity-25"
+                                                style="font-size: 3rem;"></i>
+                                        @endif
+                                    </div>
+
+                                    <div class="card-body p-3 text-center border-top">
+                                        <h6 class="fw-bold text-dark mb-1 text-truncate">{{ $p->nama }}</h6>
+                                        <div class="d-flex justify-content-center gap-2 mb-2">
+                                            <span class="badge bg-light text-dark border">{{ $p->kode }}</span>
+                                            <span
+                                                class="badge {{ $p->stok > 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }}">
+                                                Stok: {{ $p->stok }}
+                                            </span>
+                                        </div>
+                                        <div class="price-tag">Rp {{ number_format($p->harga, 0, ',', '.') }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="row g-4">
-            <div class="col-lg-8 col-xl-9">
-                <div class="card shadow-sm border-0 h-100 rounded-4 overflow-hidden">
-                    <div
-                        class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
-                        <div class="input-group shadow-sm" style="max-width: 400px;">
-                            <span class="input-group-text bg-white border-end-0 ps-3"><i
-                                    class="bi bi-search text-muted"></i></span>
-                            <input type="text" id="search" class="form-control border-start-0 py-2"
-                                placeholder="Cari nama barang..." onkeyup="filterProduk()">
+        <div class="col-lg-4 col-xl-3">
+            <div class="card shadow-sm border-0 h-100 rounded-4 d-flex flex-column overflow-hidden">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark"><i class="bi bi-cart3 me-2 text-danger"></i>Keranjang</span>
+                    <button class="btn btn-sm text-muted hover-text-danger" onclick="resetCart()"><i
+                            class="bi bi-trash"></i> Reset</button>
+                </div>
+
+                <div class="card-body p-0 scroll-area-cart bg-white position-relative flex-grow-1">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light sticky-top small text-muted text-uppercase">
+                            <tr>
+                                <th class="ps-3 border-0 py-2">Item</th>
+                                <th class="text-center border-0 py-2">Qty</th>
+                                <th class="text-end pe-3 border-0 py-2">Total</th>
+                                <th class="border-0 py-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items"></tbody>
+                    </table>
+                    <div id="empty-cart" class="text-center position-absolute top-50 start-50 translate-middle w-100 p-4">
+                        <div class="bg-light rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="bi bi-basket2 text-muted" style="font-size: 2rem;"></i>
                         </div>
-                        @if (Auth::user()->role == 'admin')
-                            <button type="button" class="btn btn-primary-action rounded-pill px-4 shadow-sm"
-                                data-bs-toggle="modal" data-bs-target="#modalTambahBarang">
-                                <i class="bi bi-plus-lg me-2"></i>Barang Baru
-                            </button>
-                        @endif
-                    </div>
-
-                    <div class="card-body bg-light scroll-area-products p-4">
-                        <div class="row g-3" id="product-list">
-                            @foreach ($products as $p)
-                                <div class="col-6 col-md-4 col-xl-3 product-item" data-name="{{ strtolower($p->nama) }}"
-                                    data-kode="{{ strtolower($p->kode) }}">
-                                    <div class="card product-card h-100 position-relative"
-                                        onclick="addToCart({{ $p->id }}, '{{ $p->nama }}', {{ $p->harga }})"
-                                        style="cursor: pointer;">
-
-                                        @if (Auth::user()->role == 'admin')
-                                            <div class="admin-actions">
-                                                <button class="btn btn-action-icon text-primary"
-                                                    onclick="editProduk(event, {{ $p->id }}, '{{ $p->kode }}', '{{ $p->nama }}', {{ $p->harga }}, {{ $p->stok }})">
-                                                    <i class="bi bi-pencil-fill"></i>
-                                                </button>
-                                                <button class="btn btn-action-icon text-danger"
-                                                    onclick="hapusProduk(event, {{ $p->id }}, '{{ $p->nama }}')">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        @endif
-
-                                        <div class="card-img-top bg-white d-flex align-items-center justify-content-center p-3"
-                                            style="height: 130px;">
-                                            @if (!empty($p->image_url))
-                                                <img src="{{ $p->image_url }}" class="w-100 h-100"
-                                                    style="object-fit: contain;"
-                                                    onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'bi bi-box-seam text-secondary opacity-25\' style=\'font-size: 3rem;\'></i>';">
-                                            @else
-                                                <i class="bi bi-box-seam text-secondary opacity-25"
-                                                    style="font-size: 3rem;"></i>
-                                            @endif
-                                        </div>
-
-                                        <div class="card-body p-3 text-center border-top">
-                                            <h6 class="fw-bold text-dark mb-1 text-truncate">{{ $p->nama }}</h6>
-                                            <div class="d-flex justify-content-center gap-2 mb-2">
-                                                <span class="badge bg-light text-dark border">{{ $p->kode }}</span>
-                                                <span
-                                                    class="badge {{ $p->stok > 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }}">
-                                                    Stok: {{ $p->stok }}
-                                                </span>
-                                            </div>
-                                            <div class="price-tag">Rp {{ number_format($p->harga, 0, ',', '.') }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+                        <p class="text-muted small fw-bold mb-0">Belum ada barang dipilih</p>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-lg-4 col-xl-3">
-                <div class="card shadow-sm border-0 h-100 rounded-4 d-flex flex-column overflow-hidden">
-                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <span class="fw-bold text-dark"><i class="bi bi-cart3 me-2 text-danger"></i>Keranjang</span>
-                        <button class="btn btn-sm text-muted hover-text-danger" onclick="resetCart()"><i
-                                class="bi bi-trash"></i> Reset</button>
+                <div class="card-footer bg-white p-3 border-top shadow-lg" style="z-index: 20;">
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">Subtotal</span>
+                        <span class="fw-bold text-dark" id="label-subtotal">Rp 0</span>
                     </div>
 
-                    <div class="card-body p-0 scroll-area-cart bg-white position-relative flex-grow-1">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light sticky-top small text-muted text-uppercase">
-                                <tr>
-                                    <th class="ps-3 border-0 py-2">Item</th>
-                                    <th class="text-center border-0 py-2">Qty</th>
-                                    <th class="text-end pe-3 border-0 py-2">Total</th>
-                                    <th class="border-0 py-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="cart-items"></tbody>
-                        </table>
-                        <div id="empty-cart"
-                            class="text-center position-absolute top-50 start-50 translate-middle w-100 p-4">
-                            <div class="bg-light rounded-circle d-inline-flex p-3 mb-3">
-                                <i class="bi bi-basket2 text-muted" style="font-size: 2rem;"></i>
-                            </div>
-                            <p class="text-muted small fw-bold mb-0">Belum ada barang dipilih</p>
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text bg-light border-end-0 text-muted fw-bold-white">Diskon</span>
+                        <input type="number" id="input-diskon" class="form-control bg-light border-start-0 text-end"
+                            placeholder="0" oninput="hitungTotal()">
+                    </div>
+
+                    <div id="box-admin" class="alert alert-warning py-1 px-2 d-none mb-2 border-warning"
+                        style="font-size: 0.8rem;">
+                        <i class="bi bi-lock-fill me-1"></i> Admin Password:
+                        <input type="password" id="admin-pass" class="form-control form-control-sm mt-1" placeholder="...">
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <select id="payment-method" class="form-select form-select-sm fw-bold"
+                                onchange="cekMetodeBayar()">
+                                <option value="cash">Tunai</option>
+                                <option value="online">QRIS/TF</option>
+                                <option value="utang">Utang</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <input type="text" id="customer-name" class="form-control form-control-sm"
+                                placeholder="Pelanggan">
                         </div>
                     </div>
 
-                    <div class="card-footer bg-white p-3 border-top shadow-lg" style="z-index: 20;">
-                        <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-muted">Subtotal</span>
-                            <span class="fw-bold text-dark" id="label-subtotal">Rp 0</span>
+                    <div class="p-3 bg-light rounded-3 mb-3 border border-dashed">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <span class="small fw-bold text-uppercase text-muted">Total Bayar</span>
+                            <span class="h4 fw-bold text-danger mb-0" id="label-total">Rp 0</span>
                         </div>
-
-                        <div class="input-group input-group-sm mb-2">
-                            <span class="input-group-text bg-light border-end-0 text-muted fw-bold-white">Diskon</span>
-                            <input type="number" id="input-diskon" class="form-control bg-light border-start-0 text-end"
-                                placeholder="0" oninput="hitungTotal()">
-                        </div>
-
-                        <div id="box-admin" class="alert alert-warning py-1 px-2 d-none mb-2 border-warning"
-                            style="font-size: 0.8rem;">
-                            <i class="bi bi-lock-fill me-1"></i> Admin Password:
-                            <input type="password" id="admin-pass" class="form-control form-control-sm mt-1"
-                                placeholder="...">
-                        </div>
-
-                        <div class="row g-2 mb-2">
-                            <div class="col-6">
-                                <select id="payment-method" class="form-select form-select-sm fw-bold"
-                                    onchange="cekMetodeBayar()">
-                                    <option value="cash">Tunai</option>
-                                    <option value="online">QRIS/TF</option>
-                                    <option value="utang">Utang</option>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <input type="text" id="customer-name" class="form-control form-control-sm"
-                                    placeholder="Pelanggan">
-                            </div>
-                        </div>
-
-                        <div class="p-3 bg-light rounded-3 mb-3 border border-dashed">
-                            <div class="d-flex justify-content-between align-items-end mb-2">
-                                <span class="small fw-bold text-uppercase text-muted">Total Bayar</span>
-                                <span class="h4 fw-bold text-danger mb-0" id="label-total">Rp 0</span>
-                            </div>
-                            <input type="number" id="input-bayar" class="form-control text-end fw-bold"
-                                placeholder="Input (Rp)">
-                        </div>
-
-                        <button onclick="prosesBayar()" class="btn btn-primary-action w-100 py-2 rounded-pill shadow-sm">
-                            BAYAR SEKARANG
-                        </button>
-
+                        <input type="number" id="input-bayar" class="form-control text-end fw-bold"
+                            placeholder="Input (Rp)">
                     </div>
+
+                    <button onclick="prosesBayar()" class="btn btn-primary-action w-100 py-2 rounded-pill shadow-sm">
+                        BAYAR SEKARANG
+                    </button>
+
                 </div>
             </div>
         </div>
@@ -619,45 +355,35 @@
 
     <div class="modal fade" id="modalTambahBarang" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
-                <!-- HEADER -->
+            <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-danger text-white px-4">
                     <h6 class="modal-title fw-bold">Tambah Barang</h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-
                 <form action="{{ route('produk.store') }}" method="POST">
                     @csrf
                     <div class="modal-body p-4">
-
                         <div class="mb-3">
                             <label class="small text-muted fw-bold">Kode Barang (Barcode)</label>
-                            <input type="text" name="kode" class="form-control bg-light border-0" required>
+                            <input type="text" name="kode" class="form-control border-0" required>
                         </div>
-
                         <div class="mb-3">
                             <label class="small text-muted fw-bold">Nama Barang</label>
-                            <input type="text" name="nama" class="form-control bg-light border-0" required>
+                            <input type="text" name="nama" class="form-control border-0" required>
                         </div>
-
                         <div class="row g-2">
                             <div class="col-7">
                                 <label class="small text-muted fw-bold">Harga Jual (Rp)</label>
-                                <input type="number" name="harga" class="form-control bg-light border-0" required>
+                                <input type="number" name="harga" class="form-control border-0" required>
                             </div>
                             <div class="col-5">
                                 <label class="small text-muted fw-bold">Stok Awal</label>
-                                <input type="number" name="stok" class="form-control bg-light border-0" required>
+                                <input type="number" name="stok" class="form-control border-0" required>
                             </div>
                         </div>
-
                     </div>
-
-                    <!-- FOOTER -->
                     <div class="modal-footer border-0 px-4 pb-4">
-                        <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold">
-                            Simpan Data
-                        </button>
+                        <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold">Simpan Data</button>
                     </div>
                 </form>
             </div>
@@ -666,7 +392,7 @@
 
     <div class="modal fade" id="modalEditBarang" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-warning text-dark px-4">
                     <h6 class="modal-title fw-bold">Edit Barang</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -680,24 +406,22 @@
                         </div>
                         <div class="mb-3">
                             <label class="small text-muted fw-bold">Kode Barang</label>
-                            <input type="text" name="kode" id="edit-kode" class="form-control bg-light border-0"
-                                required>
+                            <input type="text" name="kode" id="edit-kode" class="form-control border-0" required>
                         </div>
                         <div class="mb-3">
                             <label class="small text-muted fw-bold">Nama Barang</label>
-                            <input type="text" name="nama" id="edit-nama" class="form-control bg-light border-0"
-                                required>
+                            <input type="text" name="nama" id="edit-nama" class="form-control border-0" required>
                         </div>
                         <div class="row g-2">
                             <div class="col-7">
                                 <label class="small text-muted fw-bold">Harga</label>
-                                <input type="number" name="harga" id="edit-harga"
-                                    class="form-control bg-light border-0" required>
+                                <input type="number" name="harga" id="edit-harga" class="form-control border-0"
+                                    required>
                             </div>
                             <div class="col-5">
                                 <label class="small text-muted fw-bold">Stok</label>
-                                <input type="number" name="stok" id="edit-stok"
-                                    class="form-control bg-light border-0" required>
+                                <input type="number" name="stok" id="edit-stok" class="form-control border-0"
+                                    required>
                             </div>
                         </div>
                     </div>
@@ -714,45 +438,6 @@
         data-error="{{ session('error') }}"></div>
 
     <script>
-        // --- JAM DIGITAL ---
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('digital-clock').innerText = now.toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            document.getElementById('date-text').innerText = now.toLocaleDateString('id-ID', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'short'
-            });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // --- THEME / DARK MODE LOGIC ---
-        const themeBtn = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        const body = document.body;
-
-        // Cek Local Storage saat Load
-        if (localStorage.getItem('theme') === 'dark') {
-            body.classList.add('dark-mode');
-            themeIcon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
-        }
-
-        // Toggle Click Handler
-        themeBtn.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            if (body.classList.contains('dark-mode')) {
-                localStorage.setItem('theme', 'dark');
-                themeIcon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
-            } else {
-                localStorage.setItem('theme', 'light');
-                themeIcon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill');
-            }
-        });
-
         // --- CART LOGIC ---
         let cart = [];
         let subtotal = 0;
@@ -829,10 +514,9 @@
             let grandTotal = Math.max(0, subtotal - diskon);
             document.getElementById('label-subtotal').innerText = 'Rp ' + subtotal.toLocaleString('id-ID');
             document.getElementById('label-total').innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
-
             let boxAdmin = document.getElementById('box-admin');
             (userRole !== 'admin' && diskon > 50000) ? boxAdmin.classList.remove('d-none'): boxAdmin.classList.add(
-                'd-none');
+            'd-none');
         }
 
         function filterProduk() {
@@ -897,13 +581,9 @@
                             })
                         }).then(res => res.json()).then(data => {
                             if (data.status === 'success') {
-                                // JIKA METODE PEMBAYARAN ONLINE (XENDIT)
                                 if (data.invoice_url) {
-                                    // Redirect browser ke halaman pembayaran Xendit
                                     window.location.href = data.invoice_url;
-                                }
-                                // JIKA TUNAI / UTANG
-                                else {
+                                } else {
                                     Swal.fire('Berhasil', 'Transaksi Disimpan', 'success').then(() =>
                                         cetakStruk(data.sale_id));
                                 }
@@ -920,55 +600,6 @@
             setTimeout(() => location.reload(), 1000);
         }
 
-        function updateSemuaStatusOnline() {
-            Swal.fire({
-                title: 'Update Status Pembayaran?',
-                text: 'Akan mengecek semua transaksi online yang belum lunas',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Ya, Update',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Memproses...',
-                        text: 'Mengecek status dari Xendit',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-
-                    fetch('/transaksi/update-semua-online')
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                Swal.fire({
-                                    title: 'Berhasil!',
-                                    html: `
-                                        <p>Total Dicek: <strong>${data.total_checked}</strong></p>
-                                        <p>Berhasil Diupdate: <strong>${data.updated}</strong></p>
-                                    `,
-                                    icon: 'success',
-                                    confirmButtonColor: '#28a745'
-                                }).then(() => {
-                                    if (data.updated > 0) {
-                                        location.reload();
-                                    }
-                                });
-                            } else {
-                                Swal.fire('Gagal', data.message, 'error');
-                            }
-                        })
-                        .catch(() => {
-                            Swal.fire('Error', 'Koneksi gagal', 'error');
-                        });
-                }
-            });
-        }
-
         function editProduk(e, id, kode, nama, harga, stok) {
             e.stopPropagation();
             document.getElementById('edit-kode').value = kode;
@@ -982,20 +613,19 @@
         function hapusProduk(e, id, nama) {
             e.stopPropagation();
             Swal.fire({
-                    title: 'Hapus?',
-                    text: nama,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: 'Ya'
-                })
-                .then((r) => {
-                    if (r.isConfirmed) {
-                        let f = document.getElementById('formDeleteBarang');
-                        f.action = `/produk/hapus/${id}`;
-                        f.submit();
-                    }
-                });
+                title: 'Hapus?',
+                text: nama,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya'
+            }).then((r) => {
+                if (r.isConfirmed) {
+                    let f = document.getElementById('formDeleteBarang');
+                    f.action = `/produk/hapus/${id}`;
+                    f.submit();
+                }
+            });
         }
 
         function showToast(icon, title) {
@@ -1010,6 +640,7 @@
                 title
             });
         }
+
         document.addEventListener('DOMContentLoaded', () => {
             const f = document.getElementById('flash-data');
             if (f.dataset.success) Swal.fire({
@@ -1021,14 +652,13 @@
             });
             if (f.dataset.error) Swal.fire('Gagal', f.dataset.error, 'error');
 
-            // CEK PARAMETER URL UNTUK AUTO CETAK STRUK SETELAH PEMBAYARAN ONLINE
+            // Cek Status Pembayaran Online (Callback logic)
             const urlParams = new URLSearchParams(window.location.search);
             const saleId = urlParams.get('sale_id');
             const paymentSuccess = urlParams.get('payment_success');
             const paymentFailed = urlParams.get('payment_failed');
 
             if (paymentSuccess && saleId) {
-                // Tampilkan loading
                 Swal.fire({
                     title: 'Memeriksa Status Pembayaran...',
                     text: 'Mohon tunggu sebentar',
@@ -1037,60 +667,51 @@
                         Swal.showLoading();
                     }
                 });
-
-                // Cek status pembayaran dari Xendit
-                fetch(`/transaksi/cek-status/${saleId}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            if (data.payment_status === 'lunas') {
-                                Swal.fire({
-                                    title: 'Pembayaran Berhasil!',
-                                    text: 'Transaksi telah lunas',
-                                    icon: 'success',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    // Cetak struk otomatis
-                                    cetakStruk(saleId);
-                                    // Bersihkan URL parameter
-                                    window.history.replaceState({}, document.title, window.location
-                                        .pathname);
-                                });
-                            } else if (data.payment_status === 'batal') {
-                                Swal.fire({
-                                    title: 'Pembayaran Dibatalkan',
-                                    text: 'Invoice sudah expired atau dibatalkan',
-                                    icon: 'warning'
-                                }).then(() => {
-                                    window.history.replaceState({}, document.title, window.location
-                                        .pathname);
-                                });
-                            } else {
-                                // Masih pending
-                                Swal.fire({
-                                    title: 'Pembayaran Belum Selesai',
-                                    text: 'Silakan selesaikan pembayaran terlebih dahulu',
-                                    icon: 'info'
-                                }).then(() => {
-                                    window.history.replaceState({}, document.title, window.location
-                                        .pathname);
-                                });
-                            }
+                fetch(`/transaksi/cek-status/${saleId}`).then(res => res.json()).then(data => {
+                    if (data.status === 'success') {
+                        if (data.payment_status === 'lunas') {
+                            Swal.fire({
+                                title: 'Pembayaran Berhasil!',
+                                text: 'Transaksi telah lunas',
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                cetakStruk(saleId);
+                                window.history.replaceState({}, document.title, window.location
+                                    .pathname);
+                            });
+                        } else if (data.payment_status === 'batal') {
+                            Swal.fire({
+                                title: 'Pembayaran Dibatalkan',
+                                text: 'Invoice expired/batal',
+                                icon: 'warning'
+                            }).then(() => {
+                                window.history.replaceState({}, document.title, window.location
+                                    .pathname);
+                            });
                         } else {
-                            Swal.fire('Error', 'Gagal memeriksa status pembayaran', 'error');
+                            Swal.fire({
+                                title: 'Pembayaran Belum Selesai',
+                                text: 'Selesaikan pembayaran',
+                                icon: 'info'
+                            }).then(() => {
+                                window.history.replaceState({}, document.title, window.location
+                                    .pathname);
+                            });
                         }
-                    })
-                    .catch(() => {
-                        Swal.fire('Error', 'Koneksi gagal', 'error');
-                    });
+                    } else {
+                        Swal.fire('Error', 'Gagal memeriksa status', 'error');
+                    }
+                }).catch(() => {
+                    Swal.fire('Error', 'Koneksi gagal', 'error');
+                });
             } else if (paymentFailed) {
                 Swal.fire({
                     title: 'Pembayaran Gagal',
                     text: 'Silakan coba lagi',
                     icon: 'error'
                 }).then(() => {
-                    // Bersihkan URL parameter
                     window.history.replaceState({}, document.title, window.location.pathname);
                 });
             }
