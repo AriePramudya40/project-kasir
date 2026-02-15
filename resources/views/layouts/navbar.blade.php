@@ -20,7 +20,7 @@
             @if (Auth::user()->role == 'admin')
                 <a href="{{ route('laporan.index') }}"
                     class="nav-link-item {{ Request::is('laporan*') ? 'active' : '' }}">
-                    <i class="bi bi-bar-chart-fill"></i> Laporan
+                    <i class="bi bi-bar-chart-fill"></i> Laporan Keuangan
                 </a>
             @endif
         </div>

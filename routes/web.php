@@ -50,8 +50,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/transaksi/cek-status/{id}', [PosController::class, 'cekStatusInvoice'])->name('transaksi.cek-status');
     Route::get('/transaksi/update-semua-online', [PosController::class, 'updateSemuaStatusOnline'])->name('transaksi.update-semua-online');
     Route::post('/transaksi/manual-update/{id}', [PosController::class, 'manualUpdateStatus'])->name('transaksi.manual-update');
+    Route::post('/transaksi/lunasi/{id}', [PosController::class, 'lunasiPiutang'])->name('transaksi.lunasi');
 
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+
+    // ... route transaksi lainnya ...
+    Route::post('/transaksi/bayar', [PosController::class, 'bayar'])->name('transaksi.bayar');
+    
+    // --- TAMBAHKAN INI UNTUK CICILAN ---
+    Route::post('/transaksi/lunasi/{id}', [PosController::class, 'lunasiPiutang'])->name('transaksi.lunasi');
+    Route::get('/transaksi/cek-cicilan/{external_id}', [PosController::class, 'cekStatusCicilan'])->name('transaksi.cek-cicilan');
+    // ------------------------------------
+
+    Route::get('/transaksi/struk/{id}', [PosController::class, 'cetakStruk'])->name('transaksi.struk');
+    // ...
 });
 
 // Webhook Midtrans

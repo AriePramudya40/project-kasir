@@ -516,7 +516,7 @@
             document.getElementById('label-total').innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
             let boxAdmin = document.getElementById('box-admin');
             (userRole !== 'admin' && diskon > 50000) ? boxAdmin.classList.remove('d-none'): boxAdmin.classList.add(
-            'd-none');
+                'd-none');
         }
 
         function filterProduk() {
@@ -672,12 +672,19 @@
                         if (data.payment_status === 'lunas') {
                             Swal.fire({
                                 title: 'Pembayaran Berhasil!',
-                                text: 'Transaksi telah lunas',
+                                text: 'Transaksi telah lunas. Klik tombol di bawah untuk mencetak struk.',
                                 icon: 'success',
-                                timer: 2000,
-                                showConfirmButton: false
-                            }).then(() => {
-                                cetakStruk(saleId);
+                                // timer: 2000,          // Hapus atau komen timer ini
+                                showConfirmButton: true, // Ubah jadi true agar muncul tombol
+                                confirmButtonText: 'Cetak Struk', // Beri nama tombol
+                                confirmButtonColor: '#9A1B1F',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                // Hanya cetak jika tombol diklik
+                                if (result.isConfirmed) {
+                                    cetakStruk(saleId); // Ini sekarang aman karena dipicu oleh klik
+                                }
+                                // Bersihkan URL parameter
                                 window.history.replaceState({}, document.title, window.location
                                     .pathname);
                             });

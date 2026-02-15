@@ -34,14 +34,20 @@
         }
 
         .line {
+            border-top: 1px dashed #000;
+            margin: 3px 0;
+        }
+
+        .double-line {
             border-top: 2px dashed #000;
             margin: 3px 0;
         }
 
+        /* LOGO STYLE */
         img {
-            width: 35px;
+            width: 40px;
             display: block;
-            margin: 0 auto 4px;
+            margin: 0 auto 5px;
         }
 
         table {
@@ -54,64 +60,43 @@
             vertical-align: top;
             padding: 1px 0;
             font-size: 10px;
-            font-weight: bold;
         }
 
         .header-title {
             font-size: 13px;
             font-weight: 900;
             letter-spacing: 1px;
-            margin: 3px 0;
+            margin-bottom: 2px;
         }
 
         .header-address {
             font-size: 9px;
-            font-weight: bold;
-            line-height: 1.2;
-            margin-bottom: 2px;
-        }
-
-        .info-label {
-            font-weight: 900;
-            min-width: 50px;
-            display: inline-block;
+            line-height: 1.1;
+            margin-bottom: 5px;
         }
 
         .product-name {
             font-weight: 900;
             font-size: 9px;
-            margin-bottom: 1px;
         }
 
-        .product-detail {
-            font-size: 8px;
-            font-weight: bold;
-            color: #000;
-        }
-
-        .total-section {
+        .total-row {
             font-size: 11px;
             font-weight: 900;
-            padding: 2px 0;
         }
 
-        .footer-thanks {
-            font-size: 11px;
+        .status-box {
+            border: 2px solid #000;
+            padding: 4px;
+            text-align: center;
+            margin-top: 5px;
             font-weight: 900;
-            margin-top: 3px;
-            letter-spacing: 0.5px;
-        }
-
-        .footer-note {
-            font-size: 8px;
-            font-weight: bold;
-            line-height: 1.2;
-            margin-top: 2px;
+            font-size: 12px;
         }
     </style>
 </head>
 
-<body onload="window.print(); window.onafterprint = function(){ window.close(); }">
+<body onload="window.print()">
 
     <div class="text-center">
         <img src="{{ asset('logo.png') }}" alt="Logo">
@@ -119,30 +104,24 @@
         <div class="header-address">Jl. Sudirman, Air Molek I<br>Kec. Pasir Penyu, Riau</div>
     </div>
 
-    <div class="line"></div>
+    <div class="double-line"></div>
 
     <table>
         <tr>
-            <td class="info-label">Faktur</td>
+            <td>Faktur</td>
             <td class="text-right fw-bold">{{ $sale->no_faktur }}</td>
         </tr>
         <tr>
-            <td class="info-label">Tanggal</td>
-            <td class="text-right">{{ $sale->created_at->format('d/m/Y H:i') }}</td>
+            <td>Tanggal</td>
+            <td class="text-right">{{ $sale->created_at->format('d/m/y H:i') }}</td>
         </tr>
         <tr>
-            <td class="info-label">Kasir</td>
+            <td>Kasir</td>
             <td class="text-right">{{ strtoupper($sale->user->name ?? 'Admin') }}</td>
         </tr>
-        @if ($sale->customer_name && $sale->customer_name != 'Umum')
-            <tr>
-                <td class="info-label">Pelanggan</td>
-                <td class="text-right">{{ strtoupper($sale->customer_name) }}</td>
-            </tr>
-        @endif
         <tr>
-            <td class="info-label">Metode</td>
-            <td class="text-right fw-bold">{{ strtoupper($sale->payment_method) }}</td>
+            <td>Pelanggan</td>
+            <td class="text-right">{{ strtoupper($sale->customer_name) }}</td>
         </tr>
     </table>
 
@@ -154,9 +133,8 @@
                 <td colspan="2" class="product-name">{{ strtoupper($item->product->nama) }}</td>
             </tr>
             <tr>
-                <td class="product-detail">{{ $item->qty }} x Rp
-                    {{ number_format($item->harga_saat_itu, 0, ',', '.') }}</td>
-                <td class="text-right fw-bold">Rp {{ number_format($item->subtotal_line, 0, ',', '.') }}</td>
+                <td>{{ $item->qty }} x {{ number_format($item->harga_saat_itu, 0, ',', '.') }}</td>
+                <td class="text-right">{{ number_format($item->subtotal_line, 0, ',', '.') }}</td>
             </tr>
         @endforeach
     </table>
@@ -166,65 +144,70 @@
     <table>
         <tr>
             <td>Subtotal</td>
-            <td class="text-right fw-bold">Rp {{ number_format($sale->subtotal, 0, ',', '.') }}</td>
+            <td class="text-right">Rp {{ number_format($sale->subtotal, 0, ',', '.') }}</td>
         </tr>
         @if ($sale->diskon > 0)
             <tr>
                 <td>Diskon</td>
-                <td class="text-right fw-bold">-Rp {{ number_format($sale->diskon, 0, ',', '.') }}</td>
+                <td class="text-right">-Rp {{ number_format($sale->diskon, 0, ',', '.') }}</td>
             </tr>
         @endif
+
         <tr>
             <td colspan="2" class="line"></td>
         </tr>
-        <tr class="total-section">
-            <td>TOTAL</td>
+
+        <tr class="total-row">
+            <td>TOTAL TAGIHAN</td>
             <td class="text-right">Rp {{ number_format($sale->grand_total, 0, ',', '.') }}</td>
         </tr>
-        <tr>
-            <td colspan="2" class="line"></td>
-        </tr>
-
-        @if ($sale->payment_method == 'cash')
-            <tr>
-                <td>Tunai</td>
-                <td class="text-right fw-bold">Rp {{ number_format($sale->bayar, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Kembali</td>
-                <td class="text-right fw-bold">Rp {{ number_format($sale->bayar - $sale->grand_total, 0, ',', '.') }}
-                </td>
-            </tr>
-        @elseif($sale->payment_method == 'utang')
-            <tr>
-                <td>Sisa Utang</td>
-                <td class="text-right fw-bold">Rp {{ number_format($sale->grand_total, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td colspan="2" class="text-center fw-bold" style="padding-top:4px; font-size:10px;">** BELUM LUNAS
-                    **</td>
-            </tr>
-        @elseif($sale->payment_method == 'transfer')
-            <tr>
-                <td>Transfer</td>
-                <td class="text-right fw-bold">Rp {{ number_format($sale->grand_total, 0, ',', '.') }}</td>
-            </tr>
-        @elseif($sale->payment_method == 'online')
-            <tr>
-                <td>Pembayaran Online</td>
-                <td class="text-right fw-bold">Rp {{ number_format($sale->grand_total, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td colspan="2" class="text-center fw-bold" style="padding-top:4px; color:#28a745; font-size:10px;">✓
-                    LUNAS</td>
-            </tr>
-        @endif
     </table>
 
-    <div class="line" style="margin-top: 5px;"></div>
-    <div class="text-center">
-        <div class="footer-thanks">TERIMA KASIH</div>
-        <div class="footer-note">Barang yang sudah dibeli<br>tidak dapat ditukar/dikembalikan</div>
+    @if (isset($sale->payments) && $sale->payments->count() > 0)
+        <div class="line"></div>
+        <div class="text-center fw-bold" style="font-size:9px; margin:2px 0;">RIWAYAT PEMBAYARAN</div>
+        <table>
+            @foreach ($sale->payments as $pay)
+                <tr style="font-size: 9px; color: #333;">
+                    <td>{{ $pay->created_at->format('d/m H:i') }} [{{ strtoupper($pay->payment_method) }}]</td>
+                    <td class="text-right">{{ number_format($pay->nominal, 0, ',', '.') }}</td>
+                </tr>
+            @endforeach
+        </table>
+    @endif
+
+    <div class="line"></div>
+
+    <table>
+        <tr>
+            <td class="fw-bold">Total Dibayar</td>
+            <td class="text-right fw-bold">Rp {{ number_format($sale->bayar, 0, ',', '.') }}</td>
+        </tr>
+
+        <tr class="total-row">
+            @if ($sale->bayar >= $sale->grand_total)
+                <td>KEMBALI</td>
+                <td class="text-right">Rp {{ number_format($sale->bayar - $sale->grand_total, 0, ',', '.') }}</td>
+            @else
+                <td>SISA UTANG</td>
+                <td class="text-right">Rp {{ number_format($sale->grand_total - $sale->bayar, 0, ',', '.') }}</td>
+            @endif
+        </tr>
+    </table>
+
+    <div class="status-box">
+        @if ($sale->status == 'lunas')
+            LUNAS
+        @elseif($sale->status == 'batal')
+            DIBATALKAN
+        @else
+            BELUM LUNAS
+        @endif
+    </div>
+
+    <div class="text-center" style="margin-top: 10px;">
+        <div style="font-size: 10px; font-weight:900;">TERIMA KASIH</div>
+        <div style="font-size: 8px;">Barang yang dibeli tidak dapat ditukar</div>
     </div>
 
 </body>

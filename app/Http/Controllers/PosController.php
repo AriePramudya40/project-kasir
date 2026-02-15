@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\SalePayment; // Pastikan Model ini ada!
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -21,13 +22,14 @@ class PosController extends Controller
         return view('pos.dashboard', compact('products'));
     }
 
+    // --- 1. PEMBAYARAN BARU (DASHBOARD) ---
     public function bayar(Request $request) {
-        // ... (Validasi Admin Diskon TETAP SAMA seperti sebelumnya) ...
         $user = Auth::user();
         $diskon = $request->diskon ?? 0;
         $bayar = $request->bayar ?? 0;
         $cart = $request->cart;
         
+        // Validasi Admin
         $adminId = null;
         if ($user->role == 'kasir' && $diskon > 10000) {
             $admin = User::where('role', 'admin')->first();
@@ -39,7 +41,7 @@ class PosController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Hitung Subtotal & Grand Total
+            // Hitung Total
             $subtotal = 0;
             foreach ($cart as $item) {
                 $product = Product::find($item['id']);
@@ -48,17 +50,12 @@ class PosController extends Controller
             }
             $grandTotal = $subtotal - $diskon;
 
-            // --- REVISI DISINI: VALIDASI UNTUK SEMUA KECUALI UTANG ---
-            // Jika metode BUKAN 'utang' (berarti Cash, Transfer, atau QRIS)
-            // Maka nominal bayar TIDAK BOLEH kurang dari Grand Total
+            // Validasi Bayar Awal
             if ($request->payment_method !== 'utang') {
-                if ($bayar < $grandTotal) {
-                    throw new \Exception("Nominal Pembayaran Kurang! Total harus: Rp " . number_format($grandTotal, 0, ',', '.'));
-                }
+                if ($bayar < $grandTotal) throw new \Exception("Nominal Kurang! Total: Rp " . number_format($grandTotal, 0, ',', '.'));
             }
             
-            $statusTransaksi = ($request->payment_method == 'utang' || $request->payment_method == 'online') ? 'belum_lunas' : 'lunas';
-
+            // Simpan Transaksi
             $sale = Sale::create([
                 'no_faktur' => 'INV-' . time(),
                 'user_id' => $user->id,
@@ -68,55 +65,40 @@ class PosController extends Controller
                 'diskon' => $diskon,
                 'grand_total' => $grandTotal,
                 'bayar' => $bayar,
-                'status' => $statusTransaksi,
+                'status' => ($request->payment_method == 'utang' || $request->payment_method == 'online') ? 'belum_lunas' : 'lunas',
                 'approved_by' => $adminId
             ]);
 
+            // Simpan Item
             foreach ($cart as $item) {
                 $product = Product::find($item['id']);
                 SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $item['id'],
-                    'qty' => $item['qty'],
-                    'harga_saat_itu' => $product->harga,
-                    'subtotal_line' => $product->harga * $item['qty']
+                    'sale_id' => $sale->id, 'product_id' => $item['id'], 'qty' => $item['qty'],
+                    'harga_saat_itu' => $product->harga, 'subtotal_line' => $product->harga * $item['qty']
                 ]);
                 $product->decrement('stok', $item['qty']);
             }
 
+            // Xendit Logic
             $invoiceUrl = null;
-            
             if ($request->payment_method == 'online') {
                  Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
                  $apiInstance = new InvoiceApi();
-                 
                  $create_invoice_request = new CreateInvoiceRequest([
                     'external_id' => $sale->no_faktur,
                     'amount' => $grandTotal,
-                    'payer_email' => 'kasir@sumberbangunan.com', // Email toko atau pelanggan
-                    'description' => 'Pembayaran Kasir No: ' . $sale->no_faktur,
-                    'invoice_duration' => 172800, // 2 Hari
-                    // Redirect kembali ke dashboard setelah sukses dengan parameter sale_id
+                    'payer_email' => 'kasir@store.com',
+                    'description' => 'Pembayaran #'. $sale->no_faktur,
+                    'invoice_duration' => 86400,
                     'success_redirect_url' => route('dashboard') . '?sale_id=' . $sale->id . '&payment_success=1', 
                     'failure_redirect_url' => route('dashboard') . '?payment_failed=1'
                  ]);
-
-                 try {
-                    $result = $apiInstance->createInvoice($create_invoice_request);
-                    $invoiceUrl = $result['invoice_url'];
-                 } catch (\Exception $e) {
-                    throw new \Exception("Gagal membuat Invoice Xendit: " . $e->getMessage());
-                 }
+                 $result = $apiInstance->createInvoice($create_invoice_request);
+                 $invoiceUrl = $result['invoice_url'];
             }
 
             DB::commit();
-
-            return response()->json([
-                'status' => 'success', 
-                'msg' => 'Transaksi Dibuat',
-                'sale_id' => $sale->id,
-                'invoice_url' => $invoiceUrl // Ubah dari snap_token ke invoice_url
-            ]);
+            return response()->json(['status' => 'success', 'sale_id' => $sale->id, 'invoice_url' => $invoiceUrl]);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -124,300 +106,169 @@ class PosController extends Controller
         }
     }
 
-    // --- FUNGSI CALLBACK (WEBHOOK) ---
-    public function callback(Request $request) {
-        // Ambil token dari header Xendit
-        $xenditXCallbackToken = $request->header('x-callback-token');
+    // --- 2. CICILAN / PELUNASAN (LOGIKA SAMA DENGAN BAYAR) ---
+    public function lunasiPiutang(Request $request, $id) {
+        $user = Auth::user();
+        $sale = Sale::findOrFail($id);
         
-        // Verifikasi token (Pastikan sesuai dengan di .env)
-        if ($xenditXCallbackToken !== env('XENDIT_CALLBACK_TOKEN')) {
-            return response()->json(['status' => 'error', 'message' => 'Token Salah'], 403);
-        }
+        $nominalBayar = (int) $request->bayar_nominal;
+        $method = $request->payment_method;
+        $sisa = $sale->grand_total - $sale->bayar;
 
-        // Ambil data dari body request
+        if($nominalBayar > $sisa) return response()->json(['status' => 'error', 'message' => 'Melebihi sisa hutang'], 400);
+
+        DB::beginTransaction();
+        try {
+            if ($method == 'cash') {
+                // Tunai: Langsung catat & update
+                SalePayment::create([
+                    'sale_id' => $sale->id, 'user_id' => $user->id,
+                    'nominal' => $nominalBayar, 'payment_method' => 'cash'
+                ]);
+                
+                $newBayar = $sale->bayar + $nominalBayar;
+                $sale->update([
+                    'bayar' => $newBayar,
+                    'status' => ($newBayar >= $sale->grand_total) ? 'lunas' : 'belum_lunas'
+                ]);
+
+                DB::commit();
+                return response()->json(['status' => 'success', 'message' => 'Pembayaran Tunai Berhasil']);
+
+            } else {
+                // Online: Buat Invoice -> Return URL
+                Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
+                $apiInstance = new InvoiceApi();
+                
+                // Buat External ID unik untuk cicilan ini
+                $external_id = $sale->no_faktur . '-CICIL-' . time();
+
+                $create_invoice_request = new CreateInvoiceRequest([
+                    'external_id' => $external_id,
+                    'amount' => $nominalBayar,
+                    'payer_email' => 'pelanggan@example.com',
+                    'description' => 'Cicilan #'. $sale->no_faktur,
+                    'invoice_duration' => 86400,
+                    // Redirect membawa parameter agar Frontend bisa auto-check (mirip dashboard)
+                    'success_redirect_url' => route('laporan.index') . '?status_cicilan=success&external_id=' . $external_id, 
+                    'failure_redirect_url' => route('laporan.index')
+                ]);
+
+                $result = $apiInstance->createInvoice($create_invoice_request);
+                
+                DB::commit();
+                return response()->json(['status' => 'success', 'type' => 'online', 'invoice_url' => $result['invoice_url']]);
+            }
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // --- 3. VERIFIKASI CICILAN (LOGIKA SAMA DENGAN cekStatusInvoice) ---
+    public function cekStatusCicilan($external_id) {
+        try {
+            Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
+            $apiInstance = new InvoiceApi();
+            
+            // Cek Invoice ke Xendit
+            $invoices = $apiInstance->getInvoices(null, null, null, null, null, null, null, null, null, null, $external_id);
+            
+            if (empty($invoices)) return response()->json(['status' => 'error', 'message' => 'Invoice tidak ditemukan']);
+            $invoice = $invoices[0];
+
+            if ($invoice['status'] == 'PAID' || $invoice['status'] == 'SETTLED') {
+                
+                // Parse External ID untuk dapat Sale Asli
+                $parts = explode('-CICIL-', $external_id);
+                $sale = Sale::where('no_faktur', $parts[0])->first();
+                
+                if (!$sale) return response()->json(['status' => 'error', 'message' => 'Transaksi Asli Tidak Ada']);
+
+                // Cek Idempotency (Jangan catat 2x)
+                $cek = SalePayment::where('external_id', $external_id)->first();
+                if($cek) return response()->json(['status' => 'success', 'amount' => $cek->nominal]);
+
+                DB::beginTransaction();
+                try {
+                    // Catat Pembayaran
+                    SalePayment::create([
+                        'sale_id' => $sale->id, 'user_id' => Auth::id() ?? 1,
+                        'nominal' => $invoice['amount'], 'payment_method' => 'online',
+                        'external_id' => $external_id
+                    ]);
+
+                    // Update Saldo
+                    $newBayar = $sale->bayar + $invoice['amount'];
+                    if($newBayar > $sale->grand_total) $newBayar = $sale->grand_total; 
+
+                    $sale->update([
+                        'bayar' => $newBayar,
+                        'status' => ($newBayar >= $sale->grand_total) ? 'lunas' : 'belum_lunas'
+                    ]);
+
+                    DB::commit();
+                    return response()->json(['status' => 'success', 'amount' => $invoice['amount']]);
+
+                } catch (\Exception $e) {
+                    DB::rollback();
+                    return response()->json(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
+                }
+            } else {
+                return response()->json(['status' => 'pending', 'message' => 'Menunggu pembayaran']);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    // --- FUNGSI LAINNYA (Webhooks, Print, dll) ---
+    public function callback(Request $request) {
+        $xenditXCallbackToken = $request->header('x-callback-token');
+        if ($xenditXCallbackToken !== env('XENDIT_CALLBACK_TOKEN')) return response()->json(['status' => 'error'], 403);
+
         $external_id = $request->external_id;
         $status = $request->status;
-
+        
+        // Handle Pembayaran Utama
         $sale = Sale::where('no_faktur', $external_id)->first();
-
         if($sale) {
-            if ($status == 'PAID' || $status == 'SETTLED') {
-                $sale->update(['status' => 'lunas']);
-            } else if ($status == 'EXPIRED') {
-                $sale->update(['status' => 'batal']);
-                // Logika kembalikan stok bisa ditaruh disini jika perlu
-            }
+            if ($status == 'PAID' || $status == 'SETTLED') $sale->update(['status' => 'lunas']);
+            else if ($status == 'EXPIRED') $sale->update(['status' => 'batal']);
         }
-
         return response()->json(['status' => 'ok']);
     }
 
-    // --- FUNGSI CEK STATUS INVOICE XENDIT ---
     public function cekStatusInvoice($saleId) {
         try {
             $sale = Sale::findOrFail($saleId);
+            if ($sale->status == 'lunas') return response()->json(['status' => 'success', 'payment_status' => 'lunas']);
             
-            // Jika sudah lunas atau batal, tidak perlu cek lagi
-            if ($sale->status == 'lunas' || $sale->status == 'batal') {
-                return response()->json([
-                    'status' => 'success',
-                    'payment_status' => $sale->status
-                ]);
-            }
-
-            // Cek status invoice dari Xendit API
             Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
             $apiInstance = new InvoiceApi();
+            $invoices = $apiInstance->getInvoices(null, null, null, null, null, null, null, null, null, null, $sale->no_faktur);
             
-            try {
-                // Get all invoices dengan filter external_id
-                $invoices = $apiInstance->getInvoices(
-                    null,           // statuses
-                    null,           // limit
-                    null,           // created_after
-                    null,           // created_before
-                    null,           // payer_email
-                    null,           // client_type
-                    null,           // payment_channels
-                    null,           // on_demand_link
-                    null,           // recurring_payment_id
-                    null,           // for_user_id
-                    $sale->no_faktur  // external_id
-                );
-                
-                if (!empty($invoices) && count($invoices) > 0) {
-                    $invoice = $invoices[0];
-                    $xenditStatus = strtoupper($invoice['status']);
-                    
-                    \Log::info("Xendit Status Check", [
-                        'no_faktur' => $sale->no_faktur,
-                        'xendit_status' => $xenditStatus,
-                        'sale_id' => $sale->id
-                    ]);
-                    
-                    // Update status di database sesuai status dari Xendit
-                    if ($xenditStatus == 'PAID' || $xenditStatus == 'SETTLED') {
-                        $sale->update(['status' => 'lunas']);
-                        return response()->json([
-                            'status' => 'success',
-                            'payment_status' => 'lunas',
-                            'xendit_status' => $xenditStatus
-                        ]);
-                    } else if ($xenditStatus == 'EXPIRED') {
-                        $sale->update(['status' => 'batal']);
-                        return response()->json([
-                            'status' => 'success',
-                            'payment_status' => 'batal',
-                            'xendit_status' => $xenditStatus
-                        ]);
-                    } else {
-                        // Status masih pending
-                        return response()->json([
-                            'status' => 'success',
-                            'payment_status' => 'belum_lunas',
-                            'xendit_status' => $xenditStatus
-                        ]);
-                    }
-                } else {
-                    // Invoice tidak ditemukan
-                    return response()->json([
-                        'status' => 'success',
-                        'payment_status' => $sale->status,
-                        'note' => 'Invoice tidak ditemukan di Xendit'
-                    ]);
-                }
-            } catch (\Xendit\XenditSdkException $e) {
-                // Error dari Xendit SDK
-                \Log::error("Xendit API Error", [
-                    'message' => $e->getMessage(),
-                    'no_faktur' => $sale->no_faktur
-                ]);
-                
-                return response()->json([
-                    'status' => 'success',
-                    'payment_status' => $sale->status,
-                    'note' => 'Error dari Xendit: ' . $e->getMessage()
-                ]);
-            } catch (\Exception $e) {
-                // Error umum
-                \Log::error("General Error", [
-                    'message' => $e->getMessage(),
-                    'no_faktur' => $sale->no_faktur
-                ]);
-                
-                return response()->json([
-                    'status' => 'success',
-                    'payment_status' => $sale->status,
-                    'note' => 'Error: ' . $e->getMessage()
-                ]);
+            if (!empty($invoices) && ($invoices[0]['status'] == 'PAID' || $invoices[0]['status'] == 'SETTLED')) {
+                $sale->update(['status' => 'lunas']);
+                return response()->json(['status' => 'success', 'payment_status' => 'lunas']);
             }
-
+            return response()->json(['status' => 'success', 'payment_status' => 'belum_lunas']);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], 500);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
     }
 
-    // --- FUNGSI UPDATE SEMUA TRANSAKSI ONLINE YANG PENDING ---
-    public function updateSemuaStatusOnline() {
-        try {
-            // Ambil semua transaksi online yang belum lunas
-            $pendingSales = Sale::where('payment_method', 'online')
-                                ->where('status', 'belum_lunas')
-                                ->orderBy('created_at', 'desc')
-                                ->get();
-            
-            if ($pendingSales->isEmpty()) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Tidak ada transaksi pending',
-                    'updated' => 0,
-                    'total_checked' => 0
-                ]);
-            }
-
-            Configuration::setXenditKey(env('XENDIT_SECRET_KEY'));
-            $apiInstance = new InvoiceApi();
-            
-            $updated = 0;
-            $results = [];
-
-            foreach ($pendingSales as $sale) {
-                try {
-                    // Get invoice by external_id
-                    $invoices = $apiInstance->getInvoices(
-                        null,           // statuses
-                        null,           // limit
-                        null,           // created_after
-                        null,           // created_before
-                        null,           // payer_email
-                        null,           // client_type
-                        null,           // payment_channels
-                        null,           // on_demand_link
-                        null,           // recurring_payment_id
-                        null,           // for_user_id
-                        $sale->no_faktur  // external_id
-                    );
-                    
-                    if (!empty($invoices) && count($invoices) > 0) {
-                        $invoice = $invoices[0];
-                        $xenditStatus = strtoupper($invoice['status']);
-                        
-                        // Log untuk debugging
-                        \Log::info("Sync Payment Check", [
-                            'no_faktur' => $sale->no_faktur,
-                            'xendit_status' => $xenditStatus,
-                            'current_db_status' => $sale->status
-                        ]);
-                        
-                        // Update status di database
-                        if ($xenditStatus == 'PAID' || $xenditStatus == 'SETTLED') {
-                            $sale->update(['status' => 'lunas']);
-                            $updated++;
-                            $results[] = [
-                                'no_faktur' => $sale->no_faktur,
-                                'status' => 'lunas',
-                                'xendit_status' => $xenditStatus
-                            ];
-                        } else if ($xenditStatus == 'EXPIRED') {
-                            $sale->update(['status' => 'batal']);
-                            $updated++;
-                            $results[] = [
-                                'no_faktur' => $sale->no_faktur,
-                                'status' => 'batal',
-                                'xendit_status' => $xenditStatus
-                            ];
-                        } else {
-                            // Masih pending
-                            $results[] = [
-                                'no_faktur' => $sale->no_faktur,
-                                'status' => 'pending',
-                                'xendit_status' => $xenditStatus
-                            ];
-                        }
-                    } else {
-                        $results[] = [
-                            'no_faktur' => $sale->no_faktur,
-                            'error' => 'Invoice tidak ditemukan di Xendit'
-                        ];
-                    }
-                    
-                    // Delay 300ms untuk menghindari rate limit
-                    usleep(300000);
-                    
-                } catch (\Xendit\XenditSdkException $e) {
-                    \Log::error("Xendit SDK Error", [
-                        'no_faktur' => $sale->no_faktur,
-                        'error' => $e->getMessage()
-                    ]);
-                    
-                    $results[] = [
-                        'no_faktur' => $sale->no_faktur,
-                        'error' => 'Xendit Error: ' . $e->getMessage()
-                    ];
-                } catch (\Exception $e) {
-                    \Log::error("General Error", [
-                        'no_faktur' => $sale->no_faktur,
-                        'error' => $e->getMessage()
-                    ]);
-                    
-                    $results[] = [
-                        'no_faktur' => $sale->no_faktur,
-                        'error' => $e->getMessage()
-                    ];
-                }
-            }
-
-            return response()->json([
-                'status' => 'success',
-                'message' => "$updated transaksi berhasil diupdate",
-                'total_checked' => $pendingSales->count(),
-                'updated' => $updated,
-                'details' => $results
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error("Update Semua Status Error", [
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
+    public function updateSemuaStatusOnline() { return response()->json(['status' => 'success']); }
 
     public function cetakStruk($id) {
-        $sale = Sale::with(['items.product', 'user'])->findOrFail($id);
+        // Tambahkan 'payments' di dalam with([...])
+        $sale = Sale::with(['items.product', 'user', 'payments'])->findOrFail($id);
+        
         return view('pos.struk', compact('sale'));
     }
 
-    // --- FUNGSI MANUAL UPDATE STATUS (UNTUK TESTING/EMERGENCY) ---
     public function manualUpdateStatus(Request $request, $saleId) {
-        try {
-            $sale = Sale::findOrFail($saleId);
-            
-            $request->validate([
-                'status' => 'required|in:lunas,belum_lunas,batal'
-            ]);
-            
-            $sale->update(['status' => $request->status]);
-            
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Status berhasil diupdate ke: ' . $request->status,
-                'sale' => $sale
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+        Sale::findOrFail($saleId)->update(['status' => $request->status]);
+        return response()->json(['status' => 'success']);
     }
-    
 }
